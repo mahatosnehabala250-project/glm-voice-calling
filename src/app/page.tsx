@@ -42,6 +42,7 @@ import ClientAnalytics from '@/components/client/client-analytics';
 import WeeklySchedule from '@/components/client/weekly-schedule';
 import DoctorPortal from '@/components/client/doctor-portal';
 import WhatsAppCenter from '@/components/client/whatsapp-center';
+import VobizCallSetup from '@/components/client/vobiz-call-setup';
 import AgentStudio from '@/components/client/agent-studio';
 import NotificationsWidget from '@/components/client/notifications-widget';
 
@@ -378,6 +379,7 @@ export default function Home() {
         case 'analytics': return <ClientAnalytics />;
         case 'doctor-portal': return <DoctorPortal />;
         case 'whatsapp': return <WhatsAppCenter />;
+        case 'call-setup': return <VobizCallSetup />;
         default: return <ClientOverview />;
       }
     }

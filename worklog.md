@@ -1972,3 +1972,42 @@ Stage Summary:
 4. Deploy to Vercel/Railway with environment variables from .env
 5. Change Prisma provider to "postgresql" in schema.prisma
 6. Run: npx prisma generate && npx prisma db push
+---
+Task ID: CALL-ORCHESTRATOR
+Agent: Main Architect
+Task: Build Complete Call Orchestration System — Vobiz + Gemini + n8n + DB
+
+Work Log:
+- Created Call Orchestrator mini-service (port 3035) — the BRAIN that ties everything together
+- Complete call flow: Inbound → Greeting → STT → Intent → n8n → AI Response → TTS → Transfer/Complete → Save DB
+- 9 API endpoints: health, inbound, gather, status, transfer-status, make-call, test-call, sessions, session detail
+- Vobiz inbound webhook handler: Generates TwiML XML for greeting + speech gathering
+- Intent detection engine: booking, cancellation, reschedule, check_availability, fee_inquiry, emergency, escalation, timing, farewell, general
+- Sentiment analysis integration via Gemini service (port 3032)
+- n8n webhook triggers for: booking_request, check_availability, reschedule, cancel, transfer, escalation
+- Call transfer support: Detects emergency/escalation → transfers to clinic's human number
+- Auto-escalation timer: If call exceeds configured duration, auto-transfers
+- Database recording: Saves full transcript, summary, sentiment, intent, booking details, n8n actions
+- Created API route: /api/orch (GET/POST proxy to orchestrator service)
+- Created frontend component: vobiz-call-setup.tsx with 4 tabs (Setup, Test Call, Live Monitor, Call Flow)
+- Added 'Call Setup' to client sidebar navigation
+- Added 'call-setup' route to page.tsx
+- Test call simulation working: booking, fee, emergency, escalation scenarios all verified
+
+Stage Summary:
+- Call Orchestrator: Running on port 3035, ties Vobiz (3031) + Gemini (3032) + n8n + DB
+- Test Call Results:
+  - Booking scenario: 6 messages exchanged, n8n booking_request triggered
+  - Fee scenario: Correct fee responses from Gemini AI
+  - All scenarios produce full transcripts saved to database
+- ESLint: 0 errors
+- New files: mini-services/call-orchestrator/index.ts, src/app/api/orch/route.ts, src/components/client/vobiz-call-setup.tsx
+- New sidebar item: "Call Setup" (PhoneCall icon) under Settings section
+
+### How to Connect Vobiz Number to Clinic (Step-by-Step for User):
+1. Go to clinic Settings → Call Setup tab
+2. Check Vobiz SIP number is assigned (shows in green when connected)
+3. Configure n8n webhook URL for booking confirmations
+4. Click "Test Call" to simulate a conversation flow
+5. In production: Vobiz sends inbound webhook → Orchestrator handles everything
+6. All calls recorded in database with full transcript + AI analysis

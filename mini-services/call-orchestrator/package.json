@@ -1,0 +1,9 @@
+{
+  "name": "voiceai-call-orchestrator",
+  "version": "1.0.0",
+  "description": "Call Orchestrator - Ties Vobiz SIP + Gemini AI + n8n Workflows + Database together",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {}
+}

@@ -123,6 +123,7 @@ const clientSections: NavSection[] = [
     items: [
       { id: 'settings', label: 'Settings', icon: Settings },
       { id: 'doctor-portal', label: 'Doctor Portal', icon: Stethoscope },
+      { id: 'call-setup', label: 'Call Setup', icon: PhoneCall },
       { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
     ],
   },
