@@ -7,7 +7,7 @@ import {
   RefreshCw, AlertTriangle, Shield, ExternalLink, Clock, Activity,
   ChevronDown, ChevronUp, Zap, Key, Globe, Webhook, Send, Loader2,
   Server, Table2, HardDrive, ArrowRight, Info, CheckCircle2, XCircle,
-  MessageSquare, Thermometer, Hash
+  MessageSquare, Thermometer, Hash, CalendarCheck, PhoneCall, CheckCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -163,6 +163,69 @@ const WEBHOOK_TYPE_CONFIG: Record<string, { label: string; color: string; icon: 
   appointment_created: { label: 'Booking', color: 'text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30', icon: CheckCircle2 },
   error: { label: 'Error', color: 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/30', icon: XCircle },
 };
+
+// ============================
+// n8n Workflow Configuration
+// ============================
+
+const N8N_WORKFLOWS = [
+  {
+    id: 'booking',
+    name: 'Appointment Booking',
+    description: 'Creates new appointment when patient books via voice call',
+    icon: CalendarCheck,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-booking',
+    color: 'emerald' as const,
+  },
+  {
+    id: 'availability',
+    name: 'Check Availability',
+    description: 'Checks available time slots for appointment booking',
+    icon: Clock,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-check-availability',
+    color: 'teal' as const,
+  },
+  {
+    id: 'reschedule',
+    name: 'Reschedule',
+    description: 'Reschedules existing appointment to new date/time',
+    icon: RefreshCw,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-reschedule',
+    color: 'cyan' as const,
+  },
+  {
+    id: 'cancel',
+    name: 'Cancel Appointment',
+    description: 'Cancels a booked appointment and notifies clinic',
+    icon: XCircle,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-cancel',
+    color: 'rose' as const,
+  },
+  {
+    id: 'escalation',
+    name: 'Call Transfer & Escalation',
+    description: 'Handles emergency escalation and human agent transfer',
+    icon: AlertTriangle,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-escalation',
+    color: 'amber' as const,
+  },
+  {
+    id: 'call_summary',
+    name: 'Call Summary',
+    description: 'Saves call transcript, summary, and sentiment after call ends',
+    icon: PhoneCall,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-call-summary',
+    color: 'emerald' as const,
+  },
+  {
+    id: 'test',
+    name: 'Test Connectivity',
+    description: 'Tests n8n server connection and webhook reachability',
+    icon: Zap,
+    webhookUrl: 'https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-test',
+    color: 'teal' as const,
+  },
+];
 
 // ============================
 // Utility: Mask credential
@@ -526,6 +589,14 @@ export default function IntegrationSettings() {
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingSupabase, setTestingSupabase] = useState(false);
 
+  // n8n workflow testing state
+  const [n8nTestResults, setN8nTestResults] = useState<Record<string, { success: boolean; message?: string; latency?: number }>>({});
+  const [n8nTestingIds, setN8nTestingIds] = useState<Set<string>>(new Set());
+  const [n8nTestAllLoading, setN8nTestAllLoading] = useState(false);
+  const [n8nTestProgress, setN8nTestProgress] = useState(0);
+  const [n8nTestAllDone, setN8nTestAllDone] = useState(false);
+  const [n8nTestAllPassed, setN8nTestAllPassed] = useState(0);
+
   // ============================
   // Health Checks
   // ============================
@@ -659,6 +730,117 @@ export default function IntegrationSettings() {
 
   const handleSaveGeminiConfig = () => {
     toast.success('Gemini AI configuration saved');
+  };
+
+  // ============================
+  // n8n Workflow Test Handlers
+  // ============================
+
+  const handleTestN8nWorkflow = async (workflowId: string, webhookUrl: string) => {
+    setN8nTestingIds(prev => new Set(prev).add(workflowId));
+    try {
+      const start = Date.now();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          test: true,
+          source: 'voiceai-admin',
+          workflowId,
+          timestamp: new Date().toISOString(),
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const latency = Date.now() - start;
+
+      let message = '';
+      if (res.ok) {
+        try {
+          const data = await res.json();
+          message = data.message || data.status || data.response || `${res.status} OK`;
+        } catch {
+          message = `${res.status} OK`;
+        }
+        setN8nTestResults(prev => ({ ...prev, [workflowId]: { success: true, message, latency } }));
+      } else {
+        message = `${res.status} ${res.statusText}`;
+        setN8nTestResults(prev => ({ ...prev, [workflowId]: { success: false, message, latency } }));
+      }
+    } catch (err) {
+      const message = err instanceof Error && err.name === 'AbortError'
+        ? 'Timeout (15s)'
+        : 'Network error or CORS blocked';
+      setN8nTestResults(prev => ({ ...prev, [workflowId]: { success: false, message } }));
+    } finally {
+      setN8nTestingIds(prev => {
+        const next = new Set(prev);
+        next.delete(workflowId);
+        return next;
+      });
+    }
+  };
+
+  const handleTestAllN8nWorkflows = async () => {
+    setN8nTestAllLoading(true);
+    setN8nTestProgress(0);
+    setN8nTestAllDone(false);
+    setN8nTestAllPassed(0);
+
+    let passed = 0;
+    for (let i = 0; i < N8N_WORKFLOWS.length; i++) {
+      const wf = N8N_WORKFLOWS[i];
+      setN8nTestProgress(i + 1);
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const res = await fetch(wf.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            test: true,
+            source: 'voiceai-admin-bulk',
+            workflowId: wf.id,
+            timestamp: new Date().toISOString(),
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        let message = '';
+        const latency = 0;
+        if (res.ok) {
+          passed++;
+          try {
+            const data = await res.json();
+            message = data.message || data.status || `${res.status} OK`;
+          } catch {
+            message = `${res.status} OK`;
+          }
+          setN8nTestResults(prev => ({ ...prev, [wf.id]: { success: true, message, latency } }));
+        } else {
+          message = `${res.status} ${res.statusText}`;
+          setN8nTestResults(prev => ({ ...prev, [wf.id]: { success: false, message, latency } }));
+        }
+      } catch (err) {
+        const message = err instanceof Error && err.name === 'AbortError'
+          ? 'Timeout (10s)'
+          : 'Network error';
+        setN8nTestResults(prev => ({ ...prev, [wf.id]: { success: false, message } }));
+      }
+      // Small delay between tests to avoid rate limiting
+      if (i < N8N_WORKFLOWS.length - 1) {
+        await new Promise(r => setTimeout(r, 300));
+      }
+    }
+
+    setN8nTestAllPassed(passed);
+    setN8nTestAllDone(true);
+    setN8nTestAllLoading(false);
+    toast.success(`${passed}/${N8N_WORKFLOWS.length} workflows responded successfully`);
   };
 
   // ============================
@@ -1554,6 +1736,261 @@ export default function IntegrationSettings() {
                     );
                   })}
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ================================ */}
+      {/* n8n Workflow Automation           */}
+      {/* ================================ */}
+      <motion.div variants={itemAnim}>
+        <Card className="border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                  <Webhook className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">n8n Workflow Automation</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">7 live workflows powering VoiceAI call orchestration</CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] px-2 py-0.5">
+                  <span className="relative flex h-1.5 w-1.5 mr-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  </span>
+                  All Live
+                </Badge>
+                <a
+                  href="https://n8n.srv1347095.hstgr.cloud"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Open n8n Dashboard</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </a>
+              </div>
+            </div>
+            {/* Test All Workflows Button */}
+            <div className="mt-4">
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs h-8 shadow-sm"
+                disabled={n8nTestAllLoading}
+                onClick={handleTestAllN8nWorkflows}
+              >
+                {n8nTestAllLoading ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                    Testing {n8nTestProgress}/{N8N_WORKFLOWS.length}...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3 h-3 mr-1.5" />
+                    Test All Workflows
+                  </>
+                )}
+              </Button>
+              {n8nTestAllDone && (
+                <motion.span
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="ml-3 text-xs text-emerald-600 dark:text-emerald-400 font-medium"
+                >
+                  {n8nTestAllPassed === N8N_WORKFLOWS.length
+                    ? `All ${N8N_WORKFLOWS.length} workflows responding`
+                    : `${n8nTestAllPassed}/${N8N_WORKFLOWS.length} workflows responding`
+                  }
+                </motion.span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {N8N_WORKFLOWS.map((workflow) => {
+                const Icon = workflow.icon;
+                const testResult = n8nTestResults[workflow.id];
+                const isTesting = n8nTestingIds.has(workflow.id);
+                const truncatedUrl = workflow.webhookUrl.length > 45
+                  ? workflow.webhookUrl.substring(0, 22) + '...' + workflow.webhookUrl.substring(workflow.webhookUrl.length - 20)
+                  : workflow.webhookUrl;
+
+                return (
+                  <motion.div
+                    key={workflow.id}
+                    variants={scaleIn}
+                    whileHover={{ y: -2 }}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-3.5 transition-all hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                          workflow.color === 'emerald' && 'bg-emerald-100 dark:bg-emerald-900/30',
+                          workflow.color === 'teal' && 'bg-teal-100 dark:bg-teal-900/30',
+                          workflow.color === 'cyan' && 'bg-cyan-100 dark:bg-cyan-900/30',
+                          workflow.color === 'rose' && 'bg-rose-100 dark:bg-rose-900/30',
+                          workflow.color === 'amber' && 'bg-amber-100 dark:bg-amber-900/30',
+                        )}>
+                          <Icon className={cn(
+                            'w-4 h-4',
+                            workflow.color === 'emerald' && 'text-emerald-600 dark:text-emerald-400',
+                            workflow.color === 'teal' && 'text-teal-600 dark:text-teal-400',
+                            workflow.color === 'cyan' && 'text-cyan-600 dark:text-cyan-400',
+                            workflow.color === 'rose' && 'text-rose-600 dark:text-rose-400',
+                            workflow.color === 'amber' && 'text-amber-600 dark:text-amber-400',
+                          )} />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">{workflow.name}</h4>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                            </span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Live</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2.5 line-clamp-2 leading-relaxed">
+                      {workflow.description}
+                    </p>
+
+                    {/* Webhook URL */}
+                    <div className="flex items-center gap-1 mb-2.5 px-2 py-1.5 rounded bg-slate-50 dark:bg-slate-800/60">
+                      <code className="text-[9px] font-mono text-slate-500 dark:text-slate-400 truncate flex-1 select-all">
+                        {truncatedUrl}
+                      </code>
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex-shrink-0"
+                              onClick={() => {
+                                navigator.clipboard.writeText(workflow.webhookUrl);
+                                toast.success('Webhook URL copied');
+                              }}
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Copy full URL</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+
+                    {/* Test Result */}
+                    {testResult && !isTesting && (
+                      <AnimatePresence>
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className={cn(
+                            'text-[10px] px-2 py-1.5 rounded mb-2',
+                            testResult.success
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50'
+                              : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/50'
+                          )}
+                        >
+                          {testResult.success ? (
+                            <span className="flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              {testResult.message || 'Webhook reachable'}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <XCircle className="w-3 h-3" />
+                              {testResult.message || 'Failed'}
+                            </span>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {/* Test Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'w-full text-[10px] h-7 border-slate-200 dark:border-slate-700',
+                        isTesting && 'text-emerald-600',
+                        testResult?.success && !isTesting && 'border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
+                        testResult && !testResult.success && !isTesting && 'border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400',
+                      )}
+                      disabled={isTesting}
+                      onClick={() => handleTestN8nWorkflow(workflow.id, workflow.webhookUrl)}
+                    >
+                      {isTesting ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : testResult?.success ? (
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                      ) : (
+                        <Zap className="w-3 h-3 mr-1" />
+                      )}
+                      {isTesting ? 'Testing...' : testResult?.success ? 'Tested OK' : 'Test Webhook'}
+                    </Button>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Server URL Info */}
+            <div className="mt-4 px-3 py-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200/50 dark:border-emerald-800/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">n8n Server</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="text-[10px] font-mono text-slate-600 dark:text-slate-400 flex-1">
+                  https://n8n.srv1347095.hstgr.cloud
+                </code>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://n8n.srv1347095.hstgr.cloud');
+                          toast.success('Server URL copied');
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Copy server URL</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <a
+                  href="https://n8n.srv1347095.hstgr.cloud"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             </div>
           </CardContent>

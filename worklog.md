@@ -2011,3 +2011,32 @@ Stage Summary:
 4. Click "Test Call" to simulate a conversation flow
 5. In production: Vobiz sends inbound webhook → Orchestrator handles everything
 6. All calls recorded in database with full transcript + AI analysis
+
+---
+Task ID: N8N-INTEGRATION
+Agent: Integration Developer
+Task: Live n8n Workflow Integration - 7 workflows connected to VoiceAI platform
+
+Work Log:
+- Updated .env with n8n server URL, API key, and 7 webhook URLs (N8N_WEBHOOK_BOOKING, CHECK_AVAILABILITY, RESCHEDULE, CANCEL, ESCALATION, CALL_SUMMARY, TEST)
+- Updated Call Orchestrator triggerN8nAction to use environment-based webhook URL mapping
+  - Created webhookUrlMap with actionType→env var mapping for 8 action types
+  - Falls back to clinicConfig.n8nWebhookUrl if no env var found
+  - Improved error message includes actionType in log
+- Updated Integration Settings frontend with live n8n workflow status cards
+  - Added N8N_WORKFLOWS constant with 7 workflow definitions (name, description, icon, webhook URL, color)
+  - Added n8n workflow testing state (testResults, testingIds, testAllLoading, testProgress, testAllDone, testAllPassed)
+  - Added handleTestN8nWorkflow function with 15s timeout, CORS handling, abort controller
+  - Added handleTestAllN8nWorkflows function with sequential testing and 300ms delay between tests
+  - Added n8n Workflow Automation section with: gradient header, All Live badge, Test All button, 7 workflow cards in responsive grid
+  - Each card shows: icon, name, Live status, description, truncated webhook URL with copy button, test button with result
+  - Added n8n Server info bar at bottom with URL, copy, and external link
+  - Added imports: CalendarCheck, PhoneCall, CheckCircle from lucide-react
+- ESLint: 0 errors
+
+Stage Summary:
+- All 7 n8n workflows live and connected
+- Call Orchestrator routes intents to correct n8n webhooks via environment variables
+- Frontend shows real-time workflow status with test functionality
+- ESLint passes with 0 errors
+- Dev server compiles successfully

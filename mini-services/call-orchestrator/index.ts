@@ -302,10 +302,21 @@ async function triggerN8nAction(session: CallSession, actionType: string, payloa
     status: 'pending',
   };
 
-  // Try clinic-specific n8n webhook
-  const webhookUrl = clinicConfig?.n8nWebhookUrl || '';
+  // Resolve webhook URL: env-based mapping first, then clinic-specific fallback
+  const webhookUrlMap: Record<string, string | undefined> = {
+    booking_request: process.env.N8N_WEBHOOK_BOOKING,
+    check_availability: process.env.N8N_WEBHOOK_CHECK_AVAILABILITY,
+    reschedule: process.env.N8N_WEBHOOK_RESCHEDULE,
+    cancel: process.env.N8N_WEBHOOK_CANCEL,
+    transfer: process.env.N8N_WEBHOOK_ESCALATION,
+    escalation: process.env.N8N_WEBHOOK_ESCALATION,
+    call_ended: process.env.N8N_WEBHOOK_CALL_SUMMARY,
+    test: process.env.N8N_WEBHOOK_TEST,
+  };
+
+  const webhookUrl = webhookUrlMap[actionType] || clinicConfig?.n8nWebhookUrl || '';
   if (!webhookUrl) {
-    console.log(`⚠️ [n8n] No webhook URL configured for clinic ${session.clinicId}`);
+    console.log(`⚠️ [n8n] No webhook URL configured for action "${actionType}" (clinic ${session.clinicId})`);
     n8nAction.status = 'failed';
     n8nAction.response = 'No webhook URL configured';
     return n8nAction;

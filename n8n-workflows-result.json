@@ -1,0 +1,73 @@
+{
+  "workflows": [
+    {
+      "name": "VoiceAI — Appointment Booking Handler",
+      "id": "8hs8JaPzraGL3Y8C",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-booking",
+      "active": true,
+      "webhookPath": "voiceai-booking",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Parse Booking Request", "Create Appointment", "Create Notification", "Respond to Webhook"]
+    },
+    {
+      "name": "VoiceAI — Check Availability",
+      "id": "guuFtuCx9K8vUoTg",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-check-availability",
+      "active": true,
+      "webhookPath": "voiceai-check-availability",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Extract Parameters", "Get Booked Slots", "Calculate Available Slots", "Respond to Webhook"]
+    },
+    {
+      "name": "VoiceAI — Reschedule Appointment",
+      "id": "OAvYTRdVWQn57yPo",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-reschedule",
+      "active": true,
+      "webhookPath": "voiceai-reschedule",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Parse Reschedule Request", "Has Appointment ID?", "Find Existing Appointment", "Resolve Appointment ID", "Update Appointment", "Create Notification", "Respond to Webhook"]
+    },
+    {
+      "name": "VoiceAI — Cancel Appointment",
+      "id": "xWTprXc9XyqCQ32s",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-cancel",
+      "active": true,
+      "webhookPath": "voiceai-cancel",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Parse Cancel Request", "Cancel Appointment", "Create Notification", "Respond to Webhook"]
+    },
+    {
+      "name": "VoiceAI — Call Transfer & Escalation",
+      "id": "LbTwkndtXtQWxgvV",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-escalation",
+      "active": true,
+      "webhookPath": "voiceai-escalation",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Categorize Escalation", "Create Escalation Notification", "Format Response", "Respond to Webhook"]
+    },
+    {
+      "name": "VoiceAI — Post-Call Summary",
+      "id": "3qfbTaHEDDqsGsj2",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-call-summary",
+      "active": true,
+      "webhookPath": "voiceai-call-summary",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Parse Call Summary", "Save Call Record", "Has Booking Details?", "Create Appointment from Call", "Create Analytics Snapshot", "Respond to Webhook"]
+    },
+    {
+      "name": "VoiceAI — Test Connectivity",
+      "id": "n5QPmqgMjoMyAlCl",
+      "webhookUrl": "https://n8n.srv1347095.hstgr.cloud/webhook/voiceai-test",
+      "active": true,
+      "webhookPath": "voiceai-test",
+      "tags": ["voiceai"],
+      "nodes": ["Webhook", "Generate Test Response", "Respond to Webhook"]
+    }
+  ],
+  "supabase": {
+    "url": "https://qgybxpteqzhcvlgdfxbn.supabase.co",
+    "tables": ["appointments", "calls", "clinics", "notifications"]
+  },
+  "n8nServer": "https://n8n.srv1347095.hstgr.cloud",
+  "created": "2026-04-22T03:48:00.000Z"
+}
