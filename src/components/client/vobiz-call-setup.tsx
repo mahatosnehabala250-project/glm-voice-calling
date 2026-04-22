@@ -37,7 +37,7 @@ import {
   Signal,
   RefreshCw,
   ExternalLink,
-  Pulse,
+  CircleDot,
   MessageSquare,
   Sparkles,
   PhoneForwarded,
@@ -1331,7 +1331,7 @@ export default function VobizCallSetup() {
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
-                      <Pulse className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      <CircleDot className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
