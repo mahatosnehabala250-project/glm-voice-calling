@@ -258,10 +258,14 @@ export default function VobizCallSetup() {
   const { user } = useAuthStore();
   const clinicId = user?.clinicId || '';
 
-  // --- Vobiz Number State ---
-  const [vobizNumber, setVobizNumber] = useState('+91-80455-12345');
+  // --- Vobiz Config State ---
+  const [vobizNumber, setVobizNumber] = useState<string>('');
   const [vobizConnected, setVobizConnected] = useState<boolean | null>(null);
   const [vobizTesting, setVobizTesting] = useState(false);
+  const [hasNumber, setHasNumber] = useState(false);
+  const [clinicName, setClinicName] = useState('');
+  const [agentStatus, setAgentStatus] = useState<string>('none');
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   // --- Active Calls State ---
   const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
@@ -294,6 +298,46 @@ export default function VobizCallSetup() {
     }
   }, []);
 
+  // --- Fetch Vobiz Config from API ---
+  const fetchVobizConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/client/vobiz-config', {
+        headers: { 'x-clinic-id': clinicId },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.clinic) {
+          setClinicName(data.clinic.name || '');
+          if (data.clinic.sipNumber) {
+            setVobizNumber(data.clinic.sipNumber);
+            setHasNumber(true);
+          } else {
+            setVobizNumber('Not Assigned');
+            setHasNumber(false);
+          }
+        }
+        if (data.agentConfig) {
+          setAgentStatus(data.agentConfig.agentStatus || 'none');
+          if (data.agentConfig.webhookUrl) {
+            setWebhookUrl(data.agentConfig.webhookUrl);
+          }
+        }
+        if (data.status) {
+          setHasNumber(data.status.hasNumber);
+          if (data.status.isFullyConfigured) {
+            setVobizConnected(true);
+          }
+        }
+      }
+    } catch {
+      // Fallback: use mock
+      setVobizNumber('Not Assigned');
+      setHasNumber(false);
+    } finally {
+      setConfigLoaded(true);
+    }
+  }, [clinicId]);
+
   // --- Fetch Orchestrator Health ---
   const fetchHealth = useCallback(async () => {
     try {
@@ -303,9 +347,6 @@ export default function VobizCallSetup() {
         setOrchHealth(data);
         if (data.vobizConnected !== undefined) {
           setVobizConnected(data.vobizConnected as boolean);
-        }
-        if (data.vobizNumber) {
-          setVobizNumber(data.vobizNumber as string);
         }
       }
     } catch {
@@ -449,6 +490,7 @@ export default function VobizCallSetup() {
 
   // Initial data fetch
   useEffect(() => {
+    fetchVobizConfig();
     fetchHealth();
     fetchSessions();
     // Poll active calls every 15 seconds
@@ -633,45 +675,72 @@ export default function VobizCallSetup() {
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                     <div className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center',
-                      vobizConnected === true
+                      hasNumber && vobizConnected === true
                         ? 'bg-emerald-100 dark:bg-emerald-950/40'
                         : vobizConnected === false
                         ? 'bg-rose-100 dark:bg-rose-950/40'
+                        : hasNumber
+                        ? 'bg-amber-100 dark:bg-amber-950/40'
                         : 'bg-slate-100 dark:bg-slate-800'
                     )}>
-                      {vobizConnected === true ? (
+                      {hasNumber && vobizConnected === true ? (
                         <Wifi className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       ) : vobizConnected === false ? (
                         <WifiOff className="w-5 h-5 text-rose-500" />
+                      ) : hasNumber ? (
+                        <Signal className="w-5 h-5 text-amber-500" />
                       ) : (
-                        <Signal className="w-5 h-5 text-slate-400" />
+                        <PhoneOff className="w-5 h-5 text-slate-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-lg font-bold text-slate-900 dark:text-white font-mono tracking-wider">
-                        {vobizNumber}
+                      <p className={cn(
+                        'text-lg font-bold font-mono tracking-wider',
+                        hasNumber ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'
+                      )}>
+                        {configLoaded ? (hasNumber ? vobizNumber : 'Not Assigned Yet') : 'Loading...'}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {vobizConnected === true
-                          ? 'Connected & Active'
-                          : vobizConnected === false
-                          ? 'Connection Failed'
-                          : 'Not yet tested'}
+                        {!configLoaded ? 'Checking...' : hasNumber
+                          ? vobizConnected === true
+                            ? 'Connected & Active'
+                            : 'Assigned — Not yet tested'
+                          : 'Contact admin to get a Vobiz number'}
                       </p>
                     </div>
                     <Badge
                       className={cn(
                         'shrink-0',
-                        vobizConnected === true
+                        hasNumber && vobizConnected === true
                           ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
                           : vobizConnected === false
                           ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800'
-                          : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/40 dark:text-slate-500 dark:border-slate-700'
+                          : hasNumber
+                          ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                          : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/40 text-slate-500 dark:border-slate-700'
                       )}
                     >
-                      {vobizConnected === true ? 'Online' : vobizConnected === false ? 'Offline' : 'Unknown'}
+                      {hasNumber && vobizConnected === true ? 'Online' : vobizConnected === false ? 'Offline' : hasNumber ? 'Pending' : 'Unassigned'}
                     </Badge>
                   </div>
+
+                  {/* Admin notice when no number assigned */}
+                  {!hasNumber && configLoaded && (
+                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/40">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                            Vobiz Number Not Assigned
+                          </p>
+                          <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+                            Your admin needs to assign a Vobiz SIP number from the &quot;Vobiz Numbers&quot; management page.
+                            Each clinic gets a unique phone number that patients call to reach your AI agent.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Action buttons */}
                   <div className="flex gap-3">

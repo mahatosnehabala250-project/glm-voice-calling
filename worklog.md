@@ -2273,3 +2273,42 @@ Answer: **Haan, ab bilkul!** New clinics can sign up directly from the login pag
 6. ✅ Unique slug generation (no conflicts even with same clinic name)
 
 No admin intervention needed. Unlimited clinics can onboard automatically.
+
+---
+Task ID: 13
+Agent: Feature Developer
+Task: Enhance per-clinic Vobiz number management - Answer user question + build features
+
+Work Log:
+- Read worklog.md and analyzed existing Vobiz number management system
+- Confirmed system already supports per-clinic Vobiz numbers (Clinic.sipNumber + AgentConfig.vobizPhoneNumber)
+- Reviewed existing components: VobizNumbers (admin), VobizCallSetup (client), VobizGuide (docs)
+- Added "Vobiz #" column to Admin Clinics table (admin-clinics.tsx):
+  - New column header after Phone column (visible on lg+ screens)
+  - Shows green badge with formatted number when assigned
+  - Shows gray "Not Set" badge when not assigned
+  - Added formatSipNumber() helper for +91 XXXXX XXXXX formatting
+  - Updated both skeleton loading table and real data table
+  - Added sipNumber to Clinic interface, imported PhoneForwarded icon
+- Created new API route GET /api/client/vobiz-config (route.ts):
+  - Accepts x-clinic-id header for multi-tenant isolation
+  - Returns clinic info (name, sipNumber, escalationNumber, status)
+  - Returns agent config with all Vobiz fields (trunk, credentials, webhook URLs)
+  - Returns computed status (hasNumber, hasAgentConfig, isFullyConfigured, agentStatus)
+- Enhanced VobizCallSetup component (vobiz-call-setup.tsx):
+  - Added fetchVobizConfig() that fetches real data from API on mount
+  - New state variables: hasNumber, clinicName, agentStatus, configLoaded
+  - Number display now shows "Not Assigned Yet" with gray styling when no number
+  - Added amber "Pending" state for numbers assigned but not tested
+  - Added PhoneOff icon for unassigned state, amber Signal for pending
+  - Added amber admin notice banner: "Contact admin to get a Vobiz number"
+  - Webhook URL now loads from API if agentConfig has one
+- ESLint: 0 errors confirmed
+- Dev server: compiles successfully
+
+Stage Summary:
+- 3 files modified (admin-clinics.tsx, vobiz-call-setup.tsx) + 1 new file (client/vobiz-config/route.ts)
+- Per-clinic Vobiz number management now fully visible in both admin and client views
+- Admin can see which clinics have Vobiz numbers directly in the Clinics table
+- Client-side VobizCallSetup shows real assigned number or clear "Not Assigned" notice
+- User's question answered: Yes, each clinic gets a unique Vobiz number, set by admin from Vobiz Numbers page

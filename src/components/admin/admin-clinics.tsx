@@ -8,7 +8,7 @@ import {
   CalendarCheck, TrendingUp, ArrowRight,
   UserCheck, Bot, Settings, Clock, Activity, BarChart3,
   LayoutGrid, List, CheckSquare, Square, Bell, FileDown,
-  ArrowUpDown, Users, AlertCircle
+  ArrowUpDown, Users, AlertCircle, PhoneForwarded
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ interface Clinic {
   whatsappNumber?: string;
   escalationNumber?: string;
   language?: string;
+  sipNumber?: string;
   status: string;
   createdAt: string;
   _count: { calls: number; appointments: number; users: number };
@@ -162,6 +163,21 @@ function getRelativeTime(dateStr: string): string {
   const diffWeeks = Math.floor(diffDays / 7);
   if (diffWeeks < 4) return `${diffWeeks}w ago`;
   return `${Math.floor(diffDays / 30)}mo ago`;
+}
+
+// ============================================================
+// SIP Number Formatter
+// ============================================================
+
+function formatSipNumber(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+  }
+  return raw;
 }
 
 // ============================================================
@@ -679,6 +695,7 @@ export default function AdminClinics() {
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Clinic</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden md:table-cell">City</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden lg:table-cell">Phone</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden lg:table-cell">Vobiz #</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Status</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Plan</th>
                       <th className="text-right py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Calls</th>
@@ -688,7 +705,7 @@ export default function AdminClinics() {
                     </tr>
                   </thead>
                   <tbody>
-                    <TableBodySkeleton rows={5} cols={10} />
+                    <TableBodySkeleton rows={5} cols={11} />
                   </tbody>
                 </table>
               </div>
@@ -780,6 +797,7 @@ export default function AdminClinics() {
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Clinic</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden md:table-cell">City</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden lg:table-cell">Phone</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden lg:table-cell">Vobiz #</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400">Status</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Plan</th>
                       <th className="text-right py-3 px-4 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Calls</th>
@@ -840,6 +858,20 @@ export default function AdminClinics() {
                           {/* Phone */}
                           <td className="py-3 px-4 text-slate-500 dark:text-slate-400 hidden lg:table-cell font-mono text-xs">
                             {formatPhone(clinic.phone)}
+                          </td>
+
+                          {/* Vobiz # */}
+                          <td className="py-3 px-4 hidden lg:table-cell">
+                            {clinic.sipNumber ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-mono text-xs">
+                                <PhoneForwarded className="w-3 h-3" />
+                                {formatSipNumber(clinic.sipNumber)}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs">
+                                Not Set
+                              </span>
+                            )}
                           </td>
 
                           {/* Status with dot */}
