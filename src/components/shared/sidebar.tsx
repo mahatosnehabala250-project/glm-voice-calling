@@ -69,6 +69,12 @@ const adminSections: NavSection[] = [
     ],
   },
   {
+    title: 'SYSTEM',
+    items: [
+      { id: 'integration', label: 'Integration', icon: Activity },
+    ],
+  },
+  {
     title: 'CONFIGURATION',
     items: [
       { id: 'agent-setup', label: 'Agent Setup', icon: Bot },

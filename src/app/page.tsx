@@ -30,6 +30,7 @@ import AdminReports from '@/components/admin/reports';
 import VobizGuide from '@/components/admin/vobiz-guide';
 import AgentAnalyticsDashboard from '@/components/admin/agent-analytics';
 import VobizNumbers from '@/components/admin/vobiz-numbers';
+import AdminIntegration from '@/components/admin/admin-integration';
 
 import ClientOverview from '@/components/client/client-overview';
 import ClientAppointments from '@/components/client/client-appointments';
@@ -366,6 +367,7 @@ export default function Home() {
         case 'vobiz-guide': return <VobizGuide />;
         case 'vobiz-numbers': return <VobizNumbers />;
         case 'agent-analytics': return <AgentAnalyticsDashboard />;
+        case 'integration': return <AdminIntegration />;
         default: return <AdminOverview />;
       }
     } else {
@@ -420,7 +422,7 @@ export default function Home() {
   const mobileNav = role === 'admin' ? adminMobileNav : clientMobileNav;
   const setCurrentPage = role === 'admin'
     ? (p: string) => {
-        useAppStore.getState().setAdminPage(p as 'overview' | 'clinics' | 'provisioning' | 'billing' | 'analytics' | 'agent-setup' | 'ai-performance' | 'live-calls' | 'notifications' | 'reports' | 'integrations' | 'vobiz-guide' | 'vobiz-numbers' | 'agent-analytics' | 'call-center');
+        useAppStore.getState().setAdminPage(p as 'overview' | 'clinics' | 'provisioning' | 'billing' | 'analytics' | 'agent-setup' | 'ai-performance' | 'live-calls' | 'notifications' | 'reports' | 'integrations' | 'vobiz-guide' | 'vobiz-numbers' | 'agent-analytics' | 'call-center' | 'integration');
         setHapticIndex(p);
         setTimeout(() => setHapticIndex(null), 300);
       }
