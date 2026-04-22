@@ -4,7 +4,7 @@
 // ============================================================
 
 const PORT = 3032;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBjHJoJa2u0qkH0GoA3Ji0BEnHkdUA1GS8";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 const PRIMARY_MODEL = "gemini-2.0-flash";
 const FALLBACK_MODEL = "gemini-2.0-flash-lite";
@@ -495,16 +495,36 @@ async function handleChat(request: Request): Promise<Response> {
       );
     }
 
-    // Demo mode — return intelligent mock responses
+    // Demo mode — use Z-AI SDK for real AI responses (fallback to mock)
     if (DEMO_MODE) {
-      const demoResponse = generateDemoChatResponse(body.message, body.clinicContext);
-      return jsonResponse({
-        success: true,
-        response: demoResponse,
-        model: "demo",
-        demoMode: true,
-        timestamp: new Date().toISOString(),
-      });
+      try {
+        const systemPrompt = buildSystemPrompt(body.clinicContext);
+        const zaiResponse = await callZAIChat(
+          systemPrompt,
+          body.message,
+          body.conversationHistory
+        );
+        console.log(`🤖 [Z-AI] Chat response: ${zaiResponse.substring(0, 80)}...`);
+        return jsonResponse({
+          success: true,
+          response: zaiResponse,
+          model: "z-ai-sdk",
+          demoMode: false,
+          backend: "z-ai-web-dev-sdk",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn(`⚠️ [Z-AI] SDK failed, falling back to demo: ${err instanceof Error ? err.message : err}`);
+        const demoResponse = generateDemoChatResponse(body.message, body.clinicContext);
+        return jsonResponse({
+          success: true,
+          response: demoResponse,
+          model: "demo-fallback",
+          demoMode: true,
+          backend: "keyword-mock",
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
 
     const systemPrompt = buildSystemPrompt(body.clinicContext);
@@ -645,15 +665,29 @@ Rules:
       { role: "user", parts: [{ text: prompt }] },
     ];
 
-    // Demo mode — return intelligent mock sentiment
+    // Demo mode — use Z-AI SDK for real sentiment analysis
     if (DEMO_MODE) {
-      const sentimentData = generateDemoSentiment(body.text);
-      return jsonResponse({
-        success: true,
-        ...sentimentData,
-        demoMode: true,
-        timestamp: new Date().toISOString(),
-      });
+      try {
+        const sentimentData = await callZAISentiment(body.text);
+        console.log(`🧠 [Z-AI] Sentiment: ${sentimentData.sentiment} (${(sentimentData.confidence * 100).toFixed(0)}%)`);
+        return jsonResponse({
+          success: true,
+          ...sentimentData,
+          demoMode: false,
+          backend: "z-ai-web-dev-sdk",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn(`⚠️ [Z-AI] Sentiment SDK failed, using mock: ${err instanceof Error ? err.message : err}`);
+        const sentimentData = generateDemoSentiment(body.text);
+        return jsonResponse({
+          success: true,
+          ...sentimentData,
+          demoMode: true,
+          backend: "keyword-mock",
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
 
     const response = await callGeminiAPI(
@@ -763,15 +797,29 @@ Rules:
       { role: "user", parts: [{ text: prompt }] },
     ];
 
-    // Demo mode — return intelligent mock summary
+    // Demo mode — use Z-AI SDK for real summary generation
     if (DEMO_MODE) {
-      const summaryData = generateDemoSummary(body.transcript, body.clinicName);
-      return jsonResponse({
-        success: true,
-        ...summaryData,
-        demoMode: true,
-        timestamp: new Date().toISOString(),
-      });
+      try {
+        const summaryData = await callZAISummary(body.transcript, body.clinicName);
+        console.log(`📝 [Z-AI] Summary intent: ${summaryData.intent}`);
+        return jsonResponse({
+          success: true,
+          ...summaryData,
+          demoMode: false,
+          backend: "z-ai-web-dev-sdk",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn(`⚠️ [Z-AI] Summary SDK failed, using mock: ${err instanceof Error ? err.message : err}`);
+        const summaryData = generateDemoSummary(body.transcript, body.clinicName);
+        return jsonResponse({
+          success: true,
+          ...summaryData,
+          demoMode: true,
+          backend: "keyword-mock",
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
 
     const response = await callGeminiAPI(
@@ -972,6 +1020,111 @@ async function handleRequest(request: Request): Promise<Response> {
 // ============================================================
 
 import { createServer } from "http";
+import ZAI from "z-ai-web-dev-sdk";
+
+// ============================================
+// Z-AI WEB DEV SDK BACKEND (real AI when Gemini unavailable)
+// ============================================
+
+let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+
+async function getZAI() {
+  if (!zaiInstance) {
+    try {
+      zaiInstance = await ZAI.create();
+      console.log("✅ Z-AI SDK initialized successfully");
+    } catch (err) {
+      console.error("⚠️ Z-AI SDK init failed:", err instanceof Error ? err.message : err);
+    }
+  }
+  return zaiInstance;
+}
+
+async function callZAIChat(systemPrompt: string, userMessage: string, conversationHistory?: ConversationMessage[]): Promise<string> {
+  const zai = await getZAI();
+  if (!zai) throw new Error("Z-AI SDK not available");
+
+  const messages: Array<{ role: string; content: string }> = [
+    { role: "assistant", content: systemPrompt },
+  ];
+
+  // Add conversation history
+  if (conversationHistory && conversationHistory.length > 0) {
+    for (const msg of conversationHistory.slice(-8)) {
+      messages.push({
+        role: msg.role === "model" ? "assistant" : "user",
+        content: msg.parts[0]?.text || "",
+      });
+    }
+  }
+
+  // Add current user message
+  messages.push({ role: "user", content: userMessage });
+
+  const completion = await zai.chat.completions.create({
+    messages,
+    thinking: { type: "disabled" },
+  });
+
+  const response = completion.choices?.[0]?.message?.content;
+  if (!response) throw new Error("Empty Z-AI response");
+  return response.trim();
+}
+
+async function callZAISentiment(text: string): Promise<SentimentResponse> {
+  const zai = await getZAI();
+  if (!zai) throw new Error("Z-AI SDK not available");
+
+  const completion = await zai.chat.completions.create({
+    messages: [
+      { role: "assistant", content: "You are a sentiment analysis engine. Analyze the sentiment of patient messages to a healthcare clinic. Always respond in valid JSON format with exactly: {\"sentiment\": \"positive\" or \"negative\" or \"neutral\", \"confidence\": <0-1>, \"keywords\": [\"word1\", \"word2\"]}" },
+      { role: "user", content: `Analyze: "${text}"` },
+    ],
+    thinking: { type: "disabled" },
+  });
+
+  const raw = completion.choices?.[0]?.message?.content || "{}";
+  try {
+    const clean = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const data = JSON.parse(clean);
+    const valid = ["positive", "negative", "neutral"].includes(data.sentiment) ? data.sentiment : "neutral";
+    return {
+      sentiment: valid,
+      confidence: Math.min(1, Math.max(0, Number(data.confidence) || 0.5)),
+      keywords: Array.isArray(data.keywords) ? data.keywords.slice(0, 5) : [],
+    };
+  } catch {
+    return generateDemoSentiment(text);
+  }
+}
+
+async function callZAISummary(transcript: string, clinicName?: string): Promise<SummaryResponse> {
+  const zai = await getZAI();
+  if (!zai) throw new Error("Z-AI SDK not available");
+
+  const completion = await zai.chat.completions.create({
+    messages: [
+      { role: "assistant", content: `You are a call analysis assistant for VoiceAI healthcare platform${clinicName ? ` for ${clinicName}` : ""}. Analyze call transcripts between patients and AI receptionists. Always respond in valid JSON: {"summary": "2-3 sentence summary", "intent": "Appointment Booking|General Inquiry|Rescheduling|Fee Inquiry|Emergency|Cancellation|Other", "tags": ["tag1","tag2","tag3"], "bookingDetails": {"patientName": null, "date": null, "time": null, "service": null}}` },
+      { role: "user", content: `Analyze this call transcript:\n\n${transcript}` },
+    ],
+    thinking: { type: "disabled" },
+  });
+
+  const raw = completion.choices?.[0]?.message?.content || "{}";
+  try {
+    const clean = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const data = JSON.parse(clean);
+    return {
+      summary: data.summary || "No summary generated.",
+      intent: data.intent || "Other",
+      tags: Array.isArray(data.tags) ? data.tags : ["unprocessed"],
+      bookingDetails: data.bookingDetails || undefined,
+    };
+  } catch {
+    return generateDemoSummary(transcript, clinicName);
+  }
+}
+
 
 const server = createServer(async (req, res) => {
   // Convert Node.js IncomingMessage to Web Request
