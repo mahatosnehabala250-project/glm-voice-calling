@@ -45,6 +45,7 @@ import WhatsAppCenter from '@/components/client/whatsapp-center';
 import VobizCallSetup from '@/components/client/vobiz-call-setup';
 import AgentStudio from '@/components/client/agent-studio';
 import NotificationsWidget from '@/components/client/notifications-widget';
+import CallFlowExplorer from '@/components/client/call-flow-explorer';
 
 import {
   Bot,
@@ -75,6 +76,7 @@ import {
   PhoneForwarded,
   Headphones,
   MessageCircleHeart,
+  GitBranch,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -380,6 +382,7 @@ export default function Home() {
         case 'doctor-portal': return <DoctorPortal />;
         case 'whatsapp': return <WhatsAppCenter />;
         case 'call-setup': return <VobizCallSetup />;
+        case 'call-flow': return <CallFlowExplorer />;
         default: return <ClientOverview />;
       }
     }
@@ -412,6 +415,7 @@ export default function Home() {
     { id: 'settings' as const, label: 'Settings', icon: Settings },
     { id: 'doctor-portal' as const, label: 'Doctor', icon: Stethoscope },
     { id: 'whatsapp' as const, label: 'WA', icon: MessageCircle },
+    { id: 'call-flow' as const, label: 'Flow', icon: GitBranch },
   ];
   const mobileNav = role === 'admin' ? adminMobileNav : clientMobileNav;
   const setCurrentPage = role === 'admin'
@@ -421,7 +425,7 @@ export default function Home() {
         setTimeout(() => setHapticIndex(null), 300);
       }
     : (p: string) => {
-        useAppStore.getState().setClientPage(p as 'overview' | 'appointments' | 'calls' | 'settings' | 'team' | 'analytics' | 'schedule' | 'ai-chat' | 'agent-studio' | 'doctor-portal' | 'whatsapp');
+        useAppStore.getState().setClientPage(p as 'overview' | 'appointments' | 'calls' | 'settings' | 'team' | 'analytics' | 'schedule' | 'ai-chat' | 'agent-studio' | 'doctor-portal' | 'whatsapp' | 'call-setup' | 'call-flow');
         setHapticIndex(p);
         setTimeout(() => setHapticIndex(null), 300);
       };

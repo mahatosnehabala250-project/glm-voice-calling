@@ -1,38 +1,15 @@
 -- ============================================
 -- VOICEAI SAAS PLATFORM - SUPABASE MIGRATION
 -- ============================================
+-- Version: 1.1.0 (FIXED: table ordering for FK dependencies)
 -- Run this SQL in your Supabase SQL Editor
--- This creates all tables with proper indexes, constraints, and RLS policies
--- Version: 1.0.0
 -- ============================================
 
 -- Enable UUID extension for CUID-like IDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================
--- 1. USERS TABLE
--- ============================================
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  email TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL,
-  name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'client')),
-  clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
-  phone TEXT,
-  avatar TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Users indexes
-CREATE INDEX IF NOT EXISTS idx_users_clinic_id ON users(clinic_id);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
--- ============================================
--- 2. CLINICS TABLE (must be created before users for FK)
+-- 1. CLINICS TABLE (no dependencies - created FIRST)
 -- ============================================
 CREATE TABLE IF NOT EXISTS clinics (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -77,14 +54,34 @@ CREATE TABLE IF NOT EXISTS clinics (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Clinics indexes
 CREATE INDEX IF NOT EXISTS idx_clinics_status ON clinics(status);
 CREATE INDEX IF NOT EXISTS idx_clinics_city ON clinics(city);
 CREATE INDEX IF NOT EXISTS idx_clinics_is_active ON clinics(is_active);
 CREATE INDEX IF NOT EXISTS idx_clinics_plan_type ON clinics(plan_type);
 
 -- ============================================
--- 3. CALLS TABLE
+-- 2. USERS TABLE (references clinics - created AFTER clinics)
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'client')),
+  clinic_id TEXT REFERENCES clinics(id) ON DELETE SET NULL,
+  phone TEXT,
+  avatar TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_clinic_id ON users(clinic_id);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- ============================================
+-- 3. CALLS TABLE (references clinics, NO FK to appointments yet)
 -- ============================================
 CREATE TABLE IF NOT EXISTS calls (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -117,11 +114,10 @@ CREATE TABLE IF NOT EXISTS calls (
   -- Audio
   audio_url TEXT,
   
-  -- Booking reference
-  appointment_id TEXT UNIQUE REFERENCES appointments(id) ON DELETE SET NULL
+  -- Booking reference (FK added AFTER appointments table is created)
+  appointment_id TEXT
 );
 
--- Calls indexes
 CREATE INDEX IF NOT EXISTS idx_calls_clinic_id ON calls(clinic_id);
 CREATE INDEX IF NOT EXISTS idx_calls_status ON calls(status);
 CREATE INDEX IF NOT EXISTS idx_calls_started_at ON calls(started_at);
@@ -129,7 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_calls_caller_phone ON calls(caller_phone);
 CREATE INDEX IF NOT EXISTS idx_calls_clinic_started ON calls(clinic_id, started_at);
 
 -- ============================================
--- 4. APPOINTMENTS TABLE
+-- 4. APPOINTMENTS TABLE (references clinics AND calls)
 -- ============================================
 CREATE TABLE IF NOT EXISTS appointments (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -159,7 +155,6 @@ CREATE TABLE IF NOT EXISTS appointments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Appointments indexes
 CREATE INDEX IF NOT EXISTS idx_appointments_clinic_id ON appointments(clinic_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
@@ -168,7 +163,16 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments(clinic_i
 CREATE INDEX IF NOT EXISTS idx_appointments_clinic_status ON appointments(clinic_id, status);
 
 -- ============================================
--- 5. NOTIFICATIONS TABLE
+-- 5. ADD FK: calls.appointment_id → appointments.id (AFTER both tables exist)
+-- ============================================
+ALTER TABLE calls 
+  ADD CONSTRAINT fk_calls_appointment_id 
+  FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_appointment_id ON calls(appointment_id) WHERE appointment_id IS NOT NULL;
+
+-- ============================================
+-- 6. NOTIFICATIONS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS notifications (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -181,13 +185,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Notifications indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_clinic_id ON notifications(clinic_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_clinic_created ON notifications(clinic_id, created_at);
 
 -- ============================================
--- 6. AGENT_CONFIGS TABLE
+-- 7. AGENT_CONFIGS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS agent_configs (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -282,12 +285,11 @@ CREATE TABLE IF NOT EXISTS agent_configs (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Agent configs indexes
 CREATE INDEX IF NOT EXISTS idx_agent_configs_clinic_id ON agent_configs(clinic_id);
 CREATE INDEX IF NOT EXISTS idx_agent_configs_agent_status ON agent_configs(agent_status);
 
 -- ============================================
--- 7. ANALYTICS_SNAPSHOTS TABLE
+-- 8. ANALYTICS_SNAPSHOTS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS analytics_snapshots (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -298,7 +300,6 @@ CREATE TABLE IF NOT EXISTS analytics_snapshots (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Analytics indexes
 CREATE INDEX IF NOT EXISTS idx_analytics_metric_type ON analytics_snapshots(metric_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_metric_date ON analytics_snapshots(metric_date);
 CREATE INDEX IF NOT EXISTS idx_analytics_clinic_id ON analytics_snapshots(clinic_id);
@@ -315,7 +316,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply updated_at triggers to all tables with updated_at column
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -332,7 +332,6 @@ CREATE TRIGGER update_agent_configs_updated_at BEFORE UPDATE ON agent_configs
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================
 
--- Enable RLS on all tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE clinics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE calls ENABLE ROW LEVEL SECURITY;
@@ -370,29 +369,17 @@ CREATE POLICY "Anon read clinics" ON clinics
 -- ============================================
 -- REALTIME SUBSCRIPTIONS
 -- ============================================
--- Enable Realtime for key tables (for live dashboard updates)
 ALTER PUBLICATION supabase_realtime ADD TABLE calls;
 ALTER PUBLICATION supabase_realtime ADD TABLE appointments;
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
 
 -- ============================================
--- SEED DATA (OPTIONAL - for demo/testing)
+-- SEED DATA
 -- ============================================
--- Insert Super Admin
--- NOTE: Password should be bcrypt-hashed. Use: bun -e "const b=require('bcryptjs');b.hash('admin123',10).then(h=>console.log(h))"
 INSERT INTO users (id, email, password, name, role, is_active) VALUES
   ('admin-001', 'admin@voiceai.in', '$2a$10$placeholder_hash_change_me', 'Super Admin', 'admin', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- ============================================
--- DONE! 
+-- DONE! All 7 tables created successfully.
 -- ============================================
--- Next steps:
--- 1. Run: bunx prisma generate (to regenerate types)
--- 2. Update .env with your Supabase credentials:
---    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
---    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
---    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
---    DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
--- 3. Run: bunx prisma db push (if using Prisma with PostgreSQL)
--- 4. Or use the Supabase SQL editor to run this migration directly

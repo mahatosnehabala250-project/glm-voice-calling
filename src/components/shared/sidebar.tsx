@@ -6,7 +6,7 @@ import {
   LayoutDashboard as ClientDash, Calendar, Phone, Settings, Users,
   Bot, LogOut, X, ChevronLeft, CalendarDays, MessageSquare, Plug, Sparkles,
   Bell, Stethoscope, FileBarChart, MessageCircle, BookOpen, Activity, PhoneForwarded,
-  Headphones
+  Headphones, GitBranch
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
@@ -124,6 +124,7 @@ const clientSections: NavSection[] = [
       { id: 'settings', label: 'Settings', icon: Settings },
       { id: 'doctor-portal', label: 'Doctor Portal', icon: Stethoscope },
       { id: 'call-setup', label: 'Call Setup', icon: PhoneCall },
+      { id: 'call-flow', label: 'Call Flow', icon: GitBranch },
       { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
     ],
   },
