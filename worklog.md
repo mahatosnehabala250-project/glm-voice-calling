@@ -2197,3 +2197,79 @@ Stage Summary:
 1. User provides Supabase credentials → Execute migration → Test n8n → Supabase flow
 2. Enable Gemini billing for real AI conversations
 3. Configure Vobiz production SIP trunk
+
+---
+Task ID: 13
+Agent: Main Architect
+Task: Build Automatic Clinic/Client Onboarding + Supabase Adapter Verification
+
+Work Log:
+- Verified Supabase adapter in src/lib/db.ts is complete (856 lines) - already built in previous session
+- Verified Supabase tables created in production: clinics, users, calls, appointments, notifications, agent_configs, analytics_snapshots
+- Confirmed RLS policies active, triggers for updated_at, realtime on calls/appointments/notifications
+- Created /api/auth/register/route.ts - Self-service clinic registration API:
+  - Validates required fields: clinicName, doctorName, email, password, phone
+  - Checks duplicate email (returns 409)
+  - Generates unique slug from clinic name (appends 4-digit number on collision)
+  - Hashes password with bcryptjs (cost 10)
+  - Creates 3 records atomically: Clinic (14-day trial, starter plan), User (client role), AgentConfig (default AI config)
+  - Returns user data in same format as login for auto-login
+- Updated src/components/auth/login-page.tsx with Sign Up flow:
+  - Added tab switcher: "Sign In" | "Sign Up" with animated transitions
+  - Sign Up has 3-step form:
+    - Step 1: Clinic Info (clinic name, doctor name, phone +91, city, state dropdown with 31 Indian states)
+    - Step 2: Account Setup (email, password with strength meter, confirm password)
+    - Step 3: Success (animated checkmark, auto-redirect to dashboard after 2s)
+  - FocusedInput reusable component with gradient bottom border on focus
+  - StepIndicator component (1-2-3 circles with completion checkmarks)
+  - Password strength meter (3-bar indicator: weak/good/strong)
+  - Auto-login via useAuthStore.setState() after successful registration
+  - Framer Motion slide transitions between steps
+  - Indian states dropdown with all 31 states/UTs
+- Tested all API endpoints:
+  - POST /api/auth/register with valid data → 200, creates all 3 records
+  - POST /api/auth/register with duplicate email → 409
+  - POST /api/auth/register with missing fields → 400
+  - POST /api/auth/login with newly created account → 200
+- ESLint: 0 errors
+- Dev server: compiles successfully
+- Created webDevReview cron job (every 15 minutes)
+
+Stage Summary:
+- Self-service clinic onboarding now fully functional
+- Any new clinic can sign up and get immediate access to their dashboard
+- 14-day free trial automatically set on registration
+- AI agent config pre-configured with defaults for each new clinic
+- Login page now supports both Sign In and Sign Up flows
+- All existing functionality preserved (demo login cards, admin login, etc.)
+- ESLint: 0 errors
+
+## PROJECT STATUS (Updated after Session 13)
+
+### Current State Assessment
+- Platform is fully functional with Supabase as production database
+- Self-service clinic registration is now live
+- Supabase adapter replaces Prisma for all 28+ API routes transparently
+- 4 Mini-services running: Vobiz SIP (:3031), Gemini AI (:3032), WS Bridge (:3033), Call Simulator (:3004)
+- 7 n8n workflows created and activated
+- All 7 Supabase tables created with RLS, triggers, realtime, and indexes
+- Dev server compiles successfully, ESLint passes with 0 errors
+
+### What Changed This Session
+1. **Automatic Onboarding System**: New clinics can self-register via Sign Up tab on login page
+2. **API Route**: POST /api/auth/register creates clinic + user + agent_config atomically
+3. **Login Page Enhancement**: Tab switcher (Sign In / Sign Up) with 3-step registration wizard
+4. **Supabase Adapter Confirmed**: db.ts adapter working with live Supabase production database
+5. **Cron Job**: webDevReview scheduled every 15 minutes for continuous development
+
+### Answer to User's Question
+User asked: "Agar manlo 10 log se zyada client onboard ho to wo automatic create hote jayenge na?"
+Answer: **Haan, ab bilkul!** New clinics can sign up directly from the login page. When someone clicks "Sign Up" and fills in their clinic details:
+1. ✅ Clinic record automatically created (with 14-day free trial)
+2. ✅ User account automatically created (with hashed password)
+3. ✅ AI Agent Config automatically created (with default settings)
+4. ✅ Auto-login — they go straight to their dashboard
+5. ✅ Duplicate email protection (409 error if already exists)
+6. ✅ Unique slug generation (no conflicts even with same clinic name)
+
+No admin intervention needed. Unlimited clinics can onboard automatically.
