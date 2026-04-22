@@ -1335,10 +1335,10 @@ async function handleOrchestrateTestVobiz(): Promise<Response> {
 // NEW: /api/orchestrate/status - Full Integration Status
 // ============================================================
 
-async function checkServiceHealth(name: string, url: string, timeout = 5000): Promise<ServiceHealth> {
+async function checkServiceHealth(name: string, url: string, timeout = 5000, headers?: Record<string, string>): Promise<ServiceHealth> {
   const start = Date.now();
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeout), headers });
     const latency = Date.now() - start;
     if (res.ok) {
       return { status: 'connected', latency };
@@ -1356,7 +1356,10 @@ async function handleOrchestrateStatus(): Promise<Response> {
     checkServiceHealth('Vobiz SIP', `${VOBIZ_SERVICE}/`, 10000),
     checkServiceHealth('Gemini AI', `${GEMINI_SERVICE}/`, 5000),
     checkServiceHealth('WS Bridge', `${WS_BRIDGE_SERVICE}/`, 5000),
-    checkServiceHealth('Supabase', `${SUPABASE_URL}/rest/v1/`, 5000),
+    checkServiceHealth('Supabase', `${SUPABASE_URL}/rest/v1/`, 5000, SUPABASE_SERVICE_KEY ? {
+      'apikey': SUPABASE_SERVICE_KEY,
+      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+    } : undefined),
     checkServiceHealth('n8n', `${N8N_BASE}/healthz`, 5000),
   ]);
 
