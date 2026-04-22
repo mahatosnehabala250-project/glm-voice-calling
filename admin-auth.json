@@ -1,0 +1,27 @@
+{
+  "cookies": [
+    {
+      "name": "NID",
+      "value": "530=Gr658Ugxr5OM2VKT-8icY2MQ7zFLnBexKK2kttlGoCEPDkctfX8qH5oB-A3B2jRMY3Yb8t0R7s2Pb1IOdGjEvLUvQRk4ppYYUH4-HCmW8d7NOfiTYa5pCxaEg2rjm0BjVhy9wgayx0uW9aRwJOGg5Z_cnKVZAvcViOi8pvUVavbhYj60ReWoCaK4HatfRz6BqtMpTv25O0ppy_MR",
+      "domain": ".google.com",
+      "path": "/",
+      "expires": 1792556287.500789,
+      "size": 215,
+      "httpOnly": true,
+      "secure": false,
+      "session": false
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "voiceai-auth",
+          "value": "{\"state\":{\"user\":{\"id\":\"cmo5fqx940000tbv66qdx6y7w\",\"email\":\"admin@voiceai.in\",\"name\":\"Platform Admin\",\"role\":\"admin\",\"clinicId\":null,\"phone\":\"+91-9876543210\",\"avatar\":null},\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbW81ZnF4OTQwMDAwdGJ2NjZxZHg2eTd3IiwiZW1haWwiOiJhZG1pbkB2b2ljZWFpLmluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzc2NzQ1MjE5LCJleHAiOjE3NzczNTAwMTl9.DyWdfWEJRYLiKHT7TKvSJ1iUEjqT6PzIi6vxCYiMxOg\",\"isAuthenticated\":true},\"version\":0}"
+        }
+      ],
+      "sessionStorage": []
+    }
+  ]
+}

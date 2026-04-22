@@ -1,0 +1,56 @@
+---
+Task ID: 13-c
+Agent: Feature Developer
+Task: Create Integration Settings Page for Super Admin Dashboard
+
+Work Log:
+- Read worklog.md to understand full project history (15+ task cycles)
+- Analyzed existing components for patterns (admin-billing.tsx, admin-overview.tsx)
+- Reviewed .env for integration credentials (Vobiz, Gemini, Supabase)
+- Reviewed existing API proxy routes (/api/vobiz, /api/gemini)
+- Created src/components/admin/integration-settings.tsx (~870 lines) with 6 major sections:
+
+  Section 1 - Integration Overview Cards (3 cards in a row):
+  - Vobiz SIP: Phone icon, emerald gradient, status dot with pulse animation, uptime, active calls
+  - Gemini AI: Brain icon, amber gradient, model display, demo mode indicator
+  - Supabase DB: Database icon, teal gradient, tables count, storage used
+  - Each card: expand/collapse for more details, Test Connection button, Configure button
+
+  Section 2 - Vobiz SIP Configuration:
+  - 4 CredentialFields: Auth ID, Auth Token, Mobile Number, Credential ID
+  - Each field: mask/reveal toggle, copy to clipboard with feedback
+  - Webhook URL display (auto-generated from window.location.origin)
+  - Connection test result panel (status, uptime, active calls)
+
+  Section 3 - Gemini AI Configuration:
+  - API Key CredentialField with mask/reveal/copy
+  - Model selector dropdown (gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-pro)
+  - System Prompt textarea with default VoiceAI prompt
+  - Temperature slider (0.0-2.0, default 0.7), Max Tokens input (256-8192)
+  - Send Test Message with AI response display
+
+  Section 4 - Supabase Configuration:
+  - Project URL and Anon Key CredentialFields
+  - Connection status with 4 stat boxes (Tables, Storage, Schemas, Uptime)
+  - Tables Overview: 6-item grid with row counts
+
+  Section 5 - API Keys Management:
+  - Amber warning banner about key security
+  - 5 keys with color-coded borders, reveal/hide, copy buttons
+
+  Section 6 - Webhook Configuration:
+  - Inbound Call and Call Status webhook URLs with copy buttons
+  - Recent Webhook Events log (5 simulated events)
+
+- Updated src/stores/app-store.ts: Added 'integrations' to AdminPage type
+- Updated src/components/shared/sidebar.tsx: Added Plug icon nav item
+- Updated src/app/page.tsx: Added case for IntegrationSettings
+
+Stage Summary:
+- 4 files modified/created (1 new component, 3 updated for integration)
+- ESLint: 0 errors
+- Dev server: compiles successfully
+- Framer Motion staggered animations, dark mode compatible, responsive design
+- All credentials masked with reveal toggle, copy to clipboard with toast feedback
+- Live health checks to /api/vobiz and /api/gemini endpoints
+- Total admin tabs: 9 (Overview, Clinics, Provisioning, Billing, Analytics, AI Insights, Live Calls, Integrations)

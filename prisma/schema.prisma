@@ -1,0 +1,310 @@
+// ============================================
+// MULTI-TENANT VOICE AI SAAS - DATABASE SCHEMA
+// ============================================
+// 
+// DUAL-PROVIDER SUPPORT:
+// - SQLite (local dev / sandbox): provider = "sqlite", DATABASE_URL=file:./db/custom.db
+// - Supabase PostgreSQL (production): provider = "postgresql", DATABASE_URL=postgresql://...
+//
+// SUPABASE PRODUCTION ACTIVATION:
+// 1. Go to https://supabase.com/dashboard → Your Project → Settings → Database
+// 2. Copy the "Connection string" (URI format)
+// 3. Set DATABASE_URL in .env to that URI
+// 4. Change provider below to "postgresql"
+// 5. Run: bunx prisma generate && bunx prisma db push
+// 6. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // PRODUCTION: Change to "postgresql" when deployed (Vercel/Railway can reach Supabase port 5432)
+  // SANDBOX: SQLite works here because TCP ports are blocked
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Platform users (Super Admins + Clinic Staff)
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  name          String
+  role          String   @default("client") // "admin" or "client"
+  clinicId      String?  // Null for super admin, set for clinic staff
+  phone         String?
+  avatar        String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clinic        Clinic?  @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([role])
+}
+
+// Core entity: Clinics (Tenants)
+model Clinic {
+  id              String   @id @default(cuid())
+  name            String
+  doctorName      String
+  slug            String   @unique
+  phone           String
+  email           String
+  address         String?
+  city            String?
+  state           String?
+  pincode         String?
+
+  // Vobiz SIP Integration
+  sipNumber       String?  // Assigned Vobiz SIP number
+  sipId           String?  // Vobiz SIP ID
+  escalationNumber String? // Human handoff number
+
+  // Business Config
+  businessHours   String   @default("09:00-18:00")
+  businessDays    String   @default("Mon-Fri")
+  services        String   // JSON string of services offered
+  consultationFee String?
+
+  // Status & Billing
+  status          String   @default("trial") // "trial", "active", "suspended", "overdue"
+  planType        String   @default("starter") // "starter", "pro", "enterprise"
+  trialEndsAt     DateTime?
+  subscriptionEndsAt DateTime?
+  whatsappNumber  String?  // Clinic's WhatsApp for notifications
+
+  // AI Agent Config
+  aiSystemPrompt  String?  // Custom system prompt overrides
+  greetingMessage String?  // Custom greeting
+  language        String   @default("hinglish") // "hinglish", "english", "hindi"
+
+  // Metadata
+  totalCalls      Int      @default(0)
+  totalBookings   Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users          User[]
+  calls          Call[]
+  appointments   Appointment[]
+  notifications  Notification[]
+  agentConfig    AgentConfig?
+
+  @@index([status])
+  @@index([city])
+}
+
+// Call records
+model Call {
+  id              String   @id @default(cuid())
+  clinicId        String
+  callSid         String?  // Vobiz call session ID
+
+  callerPhone     String
+  callerName      String?  // Identified during call
+  callerLocation  String?
+
+  // Call lifecycle
+  status          String   @default("ringing") // "ringing", "answered", "missed", "completed", "transferred", "failed"
+  direction       String   @default("inbound") // "inbound", "outbound"
+  duration        Int      @default(0) // in seconds
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  answeredAt      DateTime?
+
+  // AI Interaction
+  transcript      String?  // Full conversation transcript (JSON)
+  summary         String?  // AI-generated summary
+  sentiment       String?  // "positive", "neutral", "negative", "angry"
+  tags            String?  // JSON: ["booked", "faq", "transferred"]
+  intent          String?  // "appointment", "faq", "complaint", "emergency", "general"
+  
+  // Transfer details
+  transferReason  String?
+  transferredTo   String?
+
+  // Audio
+  audioUrl        String?
+
+  // Booking reference (if appointment was booked in this call)
+  appointment     Appointment?
+
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([callerPhone])
+}
+
+// Appointments booked by AI
+model Appointment {
+  id              String   @id @default(cuid())
+  clinicId        String
+  callId          String?  @unique // Link to the call that created this (one-to-one)
+
+  patientName     String
+  patientPhone    String
+  patientEmail    String?
+  date            String   // YYYY-MM-DD
+  time            String   // HH:MM
+  reason          String?
+  notes           String?
+
+  // Status
+  status          String   @default("pending") // "pending", "confirmed", "cancelled", "completed", "no_show"
+  bookedVia       String   @default("ai") // "ai", "manual", "walk_in"
+
+  // Revenue tracking
+  consultationFee String?
+
+  // Notification
+  whatsappSent    Boolean  @default(false)
+  whatsappSentAt  DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  call            Call?    @relation(fields: [callId], references: [id])
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([status])
+  @@index([date])
+  @@index([patientPhone])
+}
+
+// Notifications & Activity Log
+model Notification {
+  id          String   @id @default(cuid())
+  clinicId    String
+  type        String   // "booking", "escalation", "missed_call", "system"
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  metadata    String?  // JSON with extra data
+  createdAt   DateTime @default(now())
+
+  clinic      Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([isRead])
+}
+
+// Per-clinic AI Agent Configuration
+model AgentConfig {
+  id          String   @id @default(cuid())
+  clinicId    String   @unique
+
+  // AI Agent Identity
+  agentName       String   @default("VoiceAI Assistant")
+  agentPersona    String   @default("professional") // professional, friendly, clinical, warm
+  greetingMessage String   @default("Hello! Welcome to {clinicName}. How can I help you today?")
+  farewellMessage String   @default("Thank you for calling {clinicName}. Have a great day!")
+  language        String   @default("hinglish") // hinglish, english, hindi
+
+  // Voice Configuration
+  voiceProvider    String   @default("gemini")
+  voiceId          String?
+  voiceName        String?
+  voiceGender      String   @default("female") // male, female
+  voiceSpeed       String   @default("normal") // slow, normal, fast
+  speakingRate     Float?
+
+  // Call Handling
+  maxCallDuration  Int      @default(300) // seconds
+  transferOnFail   Boolean  @default(true)
+  transferNumber   String?
+  escalationPrompt String   @default("I'll connect you with our staff. Please hold.")
+
+  // Booking Configuration
+  autoBookSlot      Boolean  @default(true)
+  bookingSlotDuration Int   @default(30)
+  bookingLeadDays   Int      @default(7) // how many days ahead to book
+  bufferMinutes     Int      @default(15) // buffer between appointments
+  maxBookingsPerDay Int      @default(50)
+  autoConfirm       Boolean  @default(true)
+  requireConfirmation Boolean @default(true)
+
+  // Knowledge Base (JSON)
+  faqJson           String?  // JSON array of {question, answer} pairs
+  servicesJson      String?  // JSON array of service names the clinic offers
+  clinicDescription String?
+  specializations   String?
+  specialNotes      String?  // Free text for special instructions
+
+  // Escalation Configuration
+  escalationEnabled  Boolean  @default(true)
+  escalationAfter    Int      @default(120)
+  escalationKeywords String?
+  escalationNumber   String?
+
+  // AI Behavior
+  sentimentThreshold String   @default("negative") // when to escalate: negative, neutral
+  askForFeedback     Boolean  @default(true)
+  collectPatientInfo Boolean  @default(true) // collect name/phone before booking
+
+  // Vobiz Integration
+  vobizPhoneNumber    String?
+  vobizTrunkId        String?
+  vobizTrunkDomain    String?
+  vobizCredentialId   String?
+  vobizCredentialUser String?
+  vobizAppId          String?
+  vobizAppUrl         String?
+
+  // Webhook Configuration
+  webhookUrl          String?
+  answerUrl           String?
+  hangupUrl           String?
+  fallbackUrl         String?
+  webhookSecret       String?
+  callbackEvents      String?
+
+  // Calendar Integration
+  calendarProvider    String   @default("none")
+  calendarApiKey      String?
+  calendarWebhookUrl  String?
+  calendarId          String?
+  calendarSyncEnabled Boolean  @default(false)
+
+  // Agent Status
+  agentStatus         String   @default("draft")
+  isActive            Boolean  @default(true)
+  isConfigured        Boolean  @default(false)
+  lastTestedAt        DateTime?
+  lastTestResult      String?
+  testNotes           String?
+
+  // Performance Stats
+  totalAgentCalls     Int      @default(0)
+  totalAgentBookings  Int      @default(0)
+  avgConversationTime Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinic      Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([agentStatus])
+}
+
+// Platform-wide analytics cache (for admin dashboard)
+model AnalyticsSnapshot {
+  id              String   @id @default(cuid())
+  metricType      String   // "daily_calls", "daily_bookings", "revenue", "active_clinics"
+  metricDate      String   // YYYY-MM-DD
+  metricValue     Int      @default(0)
+  clinicId        String?  // Null for platform-wide, set for clinic-specific
+  createdAt       DateTime @default(now())
+
+  @@index([metricType])
+  @@index([metricDate])
+  @@index([clinicId])
+}
