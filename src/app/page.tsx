@@ -33,6 +33,7 @@ import AgentAnalyticsDashboard from '@/components/admin/agent-analytics';
 import VobizNumbers from '@/components/admin/vobiz-numbers';
 import AdminIntegration from '@/components/admin/admin-integration';
 import AdminWhatsApp from '@/components/admin/admin-whatsapp';
+import ServiceHealthMonitor from '@/components/admin/service-health-monitor';
 
 import ClientOverview from '@/components/client/client-overview';
 import ClientAppointments from '@/components/client/client-appointments';
@@ -50,6 +51,7 @@ import VobizCallSetup from '@/components/client/vobiz-call-setup';
 import AgentStudio from '@/components/client/agent-studio';
 import NotificationsWidget from '@/components/client/notifications-widget';
 import CallFlowExplorer from '@/components/client/call-flow-explorer';
+import VoiceTest from '@/components/client/voice-test';
 
 import {
   Bot,
@@ -82,6 +84,7 @@ import {
   MessageCircleHeart,
   GitBranch,
   Radio,
+  Mic,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -480,6 +483,7 @@ export default function Home() {
         case 'agent-analytics': return <AgentAnalyticsDashboard />;
         case 'integration': return <AdminIntegration />;
         case 'whatsapp': return <AdminWhatsApp />;
+        case 'health-monitor': return <ServiceHealthMonitor />;
         default: return <AdminOverview />;
       }
     } else {
@@ -497,6 +501,7 @@ export default function Home() {
         case 'whatsapp': return <WhatsAppCenter open={whatsappSheetOpen} onOpenChange={setWhatsappSheetOpen} scope="client" />;
         case 'call-setup': return <VobizCallSetup />;
         case 'call-flow': return <CallFlowExplorer />;
+        case 'voice-test': return <VoiceTest />;
         default: return <ClientOverview />;
       }
     }
@@ -516,6 +521,7 @@ export default function Home() {
     { id: 'vobiz-guide' as const, label: 'Vobiz', icon: BookOpen },
     { id: 'vobiz-numbers' as const, label: 'Numbers', icon: PhoneForwarded },
     { id: 'agent-analytics' as const, label: 'Agents', icon: Activity },
+    { id: 'health-monitor' as const, label: 'Health', icon: Activity },
   ];
   const clientMobileNav = [
     { id: 'overview' as const, label: 'Home', icon: LayoutDashboard },
@@ -530,6 +536,7 @@ export default function Home() {
     { id: 'doctor-portal' as const, label: 'Doctor', icon: Stethoscope },
     { id: 'whatsapp' as const, label: 'WA', icon: MessageCircle },
     { id: 'call-flow' as const, label: 'Flow', icon: GitBranch },
+    { id: 'voice-test' as const, label: 'Voice', icon: Mic },
   ];
   const mobileNav = role === 'admin' ? adminMobileNav : clientMobileNav;
   const setCurrentPage = role === 'admin'
@@ -539,7 +546,7 @@ export default function Home() {
         setTimeout(() => setHapticIndex(null), 300);
       }
     : (p: string) => {
-        useAppStore.getState().setClientPage(p as 'overview' | 'appointments' | 'calls' | 'settings' | 'team' | 'analytics' | 'schedule' | 'ai-chat' | 'agent-studio' | 'doctor-portal' | 'whatsapp' | 'call-setup' | 'call-flow');
+        useAppStore.getState().setClientPage(p as 'overview' | 'appointments' | 'calls' | 'settings' | 'team' | 'analytics' | 'schedule' | 'ai-chat' | 'agent-studio' | 'doctor-portal' | 'whatsapp' | 'call-setup' | 'call-flow' | 'voice-test');
         setHapticIndex(p);
         setTimeout(() => setHapticIndex(null), 300);
       };

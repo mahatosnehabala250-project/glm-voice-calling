@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
+import { useAppStore } from '@/stores/app-store';
 import {
   Settings as SettingsIcon, Save, Loader2, Plus, X, Building2, Clock, Globe, MessageSquare, Phone,
-  Bot, User, Sparkles, Volume2, ShieldCheck, Circle, AlertTriangle, CheckCircle2
+  Bot, User, Sparkles, Volume2, ShieldCheck, Circle, AlertTriangle, CheckCircle2,
+  Mic, Play, ChevronRight, Zap, VolumeX, Send
 } from 'lucide-react';
 import WeeklySchedule from '@/components/client/weekly-schedule';
 import TeamMembers from '@/components/client/team-members';
@@ -20,6 +22,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -86,12 +91,24 @@ const SAMPLE_GREETINGS: Record<string, { name: string; greeting: string }> = {
   },
 };
 
+const VOICE_OPTIONS = [
+  { id: 'priya', name: 'Priya', gender: 'female' as const, language: 'Hindi Female' },
+  { id: 'sarah', name: 'Sarah', gender: 'female' as const, language: 'English Female' },
+  { id: 'amit', name: 'Amit', gender: 'male' as const, language: 'Hindi Male' },
+];
+
 export default function ClientSettings() {
   const { user } = useAuthStore();
+  const { setClientPage } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newService, setNewService] = useState('');
   const [isPhoneHovered, setIsPhoneHovered] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('priya');
+  const [aiTestOpen, setAiTestOpen] = useState(false);
+  const [aiTestLoading, setAiTestLoading] = useState(false);
+  const [aiTestResponse, setAiTestResponse] = useState<string | null>(null);
+  const [aiTestBackend, setAiTestBackend] = useState('demo');
 
   const [form, setForm] = useState<ClinicSettings>({
     id: '', name: '', doctorName: '', phone: '', email: '',
@@ -147,6 +164,45 @@ export default function ClientSettings() {
       setNewService('');
     }
   };
+
+  // AI Test functions
+  const runAiTest = useCallback(async () => {
+    setAiTestLoading(true);
+    setAiTestResponse(null);
+    try {
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          message: 'Hello, I want to book an appointment for tomorrow.',
+          clinicContext: {
+            clinicName: form.name || 'Test Clinic',
+            doctorName: form.doctorName || 'Dr. Sharma',
+            language: form.language,
+            services: form.services.length > 0 ? form.services : ['General Consultation'],
+            fee: form.consultationFee || '₹500',
+          },
+        }),
+      });
+      const data = await res.json();
+      setAiTestResponse(data.response || 'No response received.');
+      setAiTestBackend(data.backend || 'demo');
+    } catch {
+      setAiTestResponse('Namaste! Aapka appointment book karne ke liye, mujhe aapka naam aur preferred date chahiye. Kaunsa date suit karega aapko?');
+      setAiTestBackend('demo-fallback');
+    } finally {
+      setAiTestLoading(false);
+    }
+  }, [form.name, form.doctorName, form.language, form.services, form.consultationFee]);
+
+  const handleVoicePreview = useCallback((voiceId: string) => {
+    const voice = VOICE_OPTIONS.find(v => v.id === voiceId);
+    if (voice) {
+      toast.info(`Previewing ${voice.name} (${voice.language}) voice. Full TTS preview coming soon!`);
+      setSelectedVoice(voiceId);
+    }
+  }, []);
 
   const removeService = (service: string) => {
     setForm({ ...form, services: form.services.filter(s => s !== service) });
@@ -512,7 +568,121 @@ export default function ClientSettings() {
       <motion.div variants={itemAnim}>
         <Card className="border-slate-200 dark:border-slate-800">
           <CardContent className="p-6">
-            <SectionTitle icon={Globe} title="AI Configuration" completed={aiConfigComplete} />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-emerald-500" />
+                <h3 className="font-semibold text-slate-900 dark:text-white">AI Configuration</h3>
+                {aiConfigComplete ? (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  </motion.div>
+                ) : (
+                  <div className="w-4 h-4 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600" />
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAiTestOpen(true)}
+                className="border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-1.5 text-xs"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Test Your AI Agent
+              </Button>
+            </div>
+
+            {/* Voice Preview Section */}
+            <div className="mb-4">
+              <Label className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">Voice Preview</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                {VOICE_OPTIONS.map((voice) => (
+                  <motion.button
+                    key={voice.id}
+                    onClick={() => setSelectedVoice(voice.id)}
+                    className={cn(
+                      'relative p-3 rounded-xl border-2 text-left transition-all duration-200 group',
+                      selectedVoice === voice.id
+                        ? 'border-emerald-400 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10 shadow-md shadow-emerald-500/10'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600'
+                    )}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {selectedVoice === voice.id && (
+                      <motion.div
+                        layoutId="voiceSelectRing"
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </motion.div>
+                    )}
+                    <div className="flex items-center gap-2.5">
+                      <div className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
+                        voice.gender === 'female'
+                          ? 'bg-pink-100 dark:bg-pink-900/20'
+                          : 'bg-sky-100 dark:bg-sky-900/20'
+                      )}>
+                        <User className={cn(
+                          'w-5 h-5',
+                          voice.gender === 'female'
+                            ? 'text-pink-600 dark:text-pink-400'
+                            : 'text-sky-600 dark:text-sky-400'
+                        )} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{voice.name}</p>
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Globe className="w-2.5 h-2.5" />
+                          {voice.language}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Mini waveform preview */}
+                    <div className="flex items-center gap-[2px] h-4 mt-2.5">
+                      {Array.from({ length: 12 }).map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className={cn(
+                            'w-[2px] rounded-full',
+                            selectedVoice === voice.id ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'
+                          )}
+                          animate={selectedVoice === voice.id ? {
+                            height: [2, Math.random() * 12 + 4, 2],
+                          } : { height: 2 }}
+                          transition={selectedVoice === voice.id ? {
+                            duration: 0.6 + Math.random() * 0.4,
+                            repeat: Infinity,
+                            repeatType: 'reverse',
+                            ease: 'easeInOut',
+                            delay: i * 0.03,
+                          } : { duration: 0.2 }}
+                        />
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-2 h-7 text-[10px] gap-1 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                      onClick={(e) => { e.stopPropagation(); handleVoicePreview(voice.id); }}
+                    >
+                      <Play className="w-2.5 h-2.5" />
+                      Preview
+                    </Button>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            <Separator className="mb-4" />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-slate-700 dark:text-slate-300">Language</Label>
@@ -542,6 +712,89 @@ export default function ClientSettings() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Quick AI Test Dialog */}
+      <Dialog open={aiTestOpen} onOpenChange={setAiTestOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              Quick AI Agent Test
+            </DialogTitle>
+            <DialogDescription>
+              Send a sample greeting and see how your AI agent responds.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Sample greeting message */}
+            <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <User className="w-3 h-3 text-slate-500" />
+                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">You (Patient)</span>
+              </div>
+              <p className="text-sm text-slate-700 dark:text-slate-200">"Hello, I want to book an appointment for tomorrow."</p>
+            </div>
+
+            {/* AI Response */}
+            {aiTestLoading ? (
+              <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Bot className="w-3 h-3 text-emerald-500" />
+                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">{aiPreview.agentName} (AI)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Loader2 className="w-3.5 h-3.5 text-emerald-500 animate-spin" />
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400">AI is thinking...</span>
+                </div>
+              </div>
+            ) : aiTestResponse ? (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-3"
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Bot className="w-3 h-3 text-emerald-500" />
+                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">{aiPreview.agentName} (AI)</span>
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-auto">
+                    {aiTestBackend}
+                  </Badge>
+                </div>
+                <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{aiTestResponse}</p>
+              </motion.div>
+            ) : (
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-center">
+                <Bot className="w-6 h-6 text-slate-300 dark:text-slate-600 mx-auto mb-1.5" />
+                <p className="text-xs text-slate-400">Press &quot;Send Test&quot; to see AI response</p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => { setAiTestOpen(false); setAiTestResponse(null); }}
+                className="flex-1 text-xs"
+              >
+                Close
+              </Button>
+              <Button
+                onClick={runAiTest}
+                disabled={aiTestLoading}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs"
+              >
+                {aiTestLoading ? (
+                  <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Sending...</>
+                ) : (
+                  <><Send className="w-3.5 h-3.5 mr-1.5" />Send Test</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* AI Agent Preview Card */}
       <motion.div variants={itemAnim}>

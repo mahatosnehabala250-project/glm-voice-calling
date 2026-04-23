@@ -73,6 +73,7 @@ const adminSections: NavSection[] = [
     title: 'SYSTEM',
     items: [
       { id: 'integration', label: 'Integration', icon: Activity },
+      { id: 'health-monitor', label: 'Health Monitor', icon: Activity },
     ],
   },
   {

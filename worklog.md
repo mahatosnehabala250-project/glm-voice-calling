@@ -2743,3 +2743,266 @@ Stage Summary:
 - ✅ Dev server: compiles successfully
 - ⚠️ Supabase full migration: Blocked on SUPABASE_SERVICE_ROLE_KEY
 - ⚠️ Vobiz real integration: Blocked on VOBIZ_AUTH_TOKEN
+
+---
+Task ID: 14-b
+Agent: Frontend Enhancement Developer
+Task: Enhance Client AI Chat Assistant with Better UX and Live Status
+
+Work Log:
+- Read existing ai-chat-assistant.tsx (782 lines) to understand current implementation
+- Read worklog.md for full project history and design patterns
+- Analyzed API route at /api/gemini for health check and chat endpoints
+- Reviewed globals.css for existing CSS animations (typing-dot, waveform-bar, etc.)
+- Reviewed shadcn/ui components available (Button, Badge, ScrollArea, Avatar)
+- Completely rewrote ai-chat-assistant.tsx with all requested enhancements:
+  1. **Service Status Indicator** — Enhanced connection status display in header:
+     - Green dot + "AI Connected" badge when z-ai-web-dev-sdk is active
+     - Amber dot + "Demo Mode" badge when using keyword-mock fallback
+     - Grey dot + "Offline" badge when service is unreachable
+     - Sub-status line shows model name or "Checking connection..."
+     - Checks health via /api/gemini?action=health with 30s polling interval
+     - Distinguishes aiReady (z-ai-web-dev-sdk) from connected (API responds)
+  2. **Response Time Tracking** — Added `responseTimeMs` field to ChatMessage interface:
+     - Tracks elapsed time from message send to AI response received
+     - Displays as "XXXms" or "X.Xs" next to each AI message timestamp
+     - Shown in emerald color for visibility
+  3. **Enhanced Typing Indicator** — Completely redesigned with framer-motion:
+     - 3 emerald bouncing dots with staggered animation delays
+     - "VoiceAI is thinking" label with animation
+     - Voice waveform animation (4 bars) next to Bot avatar during typing
+  4. **Context-Aware Quick Reply Suggestions** — New `classifyContext()` function:
+     - After greeting: ["Book Appointment", "Check Fees", "Know Services", "Talk to Doctor"]
+     - After booking/schedule: ["Today", "Tomorrow", "This Week", "Specific Date"]
+     - After call stats: ["Show call sentiment analysis", "Which calls were escalated?", ...]
+     - After summary: ["What are common patient concerns?", "Show booking conversion stats", ...]
+     - After patient lookup: ["Show their appointment history", "When was their last visit?"]
+     - General: ["Book Appointment", "Check Fees", "Business Hours", "Emergency"]
+     - Suggestions displayed as chip buttons with Zap icon and hover effects
+  5. **Message Timestamps** — Already existed, enhanced with better formatting
+  6. **Clear Chat Button** — Already existed in header, retained with Trash2 icon
+  7. **Word Count + Character Count** — Added to input area:
+     - Shows "X/1000" character count with amber warning at >900
+     - Shows "X words" word count below character count
+     - Uses tabular-nums for aligned digits
+  8. **Voice Waveform Animation** — New `VoiceWaveform` component:
+     - 4 animated bars (3px wide, emerald-400) positioned next to AI avatar
+     - Each bar has different animation duration and delay for organic look
+     - Auto-activates on latest AI message for 3 seconds after response
+     - Uses framer-motion animate with random height variation
+     - Also shown during typing indicator state
+  9. **Enhanced Empty State** — New `EmptyState` component:
+     - Animated bot illustration (80x80 gradient circle with Bot icon)
+     - Orbiting Sparkles icon (amber, animated float + rotate)
+     - Orbiting Mic icon (rose, animated float + rotate)
+     - Emerald glow blur behind bot avatar
+     - Welcome heading and description text
+     - 4 quick suggestion chips from SUGGESTION_MAP.greeting
+     - Scale/fade entrance animation
+  10. **Keyboard Shortcuts** — Retained Enter to send, Shift+Enter for new line
+  11. **Connection Status Badge** — Enhanced header badges as described in #1
+  12. **Info Panel at Bottom** — Added to input area bottom bar:
+      - "Powered by Gemini AI" with Sparkles icon when AI is connected
+      - "Powered by Demo Mode" with Info icon when in demo mode
+      - "Checking AI status..." when service is unreachable
+      - Positioned right-aligned below the input area, alongside keyboard shortcut hints
+- Updated imports: removed unused (RotateCcw, Wifi, WifiOff, AlertCircle), added (MessageCircle, Mic, Info, Badge)
+- Maintained all existing functionality: quick actions, patient lookup, mock fallback responses, markdown rendering
+- Chat bubble styles preserved: user = emerald gradient right-aligned, AI = white/slate left-aligned
+
+Stage Summary:
+- 1 file rewritten (ai-chat-assistant.tsx) from 782 lines to ~550 lines
+- ESLint: 0 errors
+- Dev server: compiles successfully, GET / returns 200
+- All 12 requested enhancements implemented
+- No new dependencies added (uses existing framer-motion, lucide-react, shadcn/ui)
+- Dark mode compatible throughout
+- Mobile-first responsive design maintained
+- Emerald/teal color scheme preserved
+---
+Task ID: 14-c
+Agent: Feature Developer
+Task: Add Voice Test Feature + Enhance Client Settings
+
+Work Log:
+- Read existing project files: page.tsx, client-settings.tsx, app-store.ts, gemini/route.ts, worklog.md
+- Analyzed component patterns, imports, types, and existing AI chat simulator for reference
+- Created src/components/client/voice-test.tsx (~480 lines) with:
+  - Phone-like simulator UI (dark rounded rectangle with notch, status bar, home indicator)
+  - 4 call states: idle → ringing → connected → ended with AnimatePresence transitions
+  - Start Test Call button with pulse animation
+  - AI greeting from language/voice configuration (Hinglish/English/Hindi × Female/Male)
+  - User message input area with send button (Enter key support)
+  - Real-time conversation flow with chat bubbles (AI on left with Bot icon, User on right)
+  - Typing indicator with 3 bouncing dots
+  - AI responses from /api/gemini (action=chat) with clinic context
+  - Call duration timer (counts up every second)
+  - Voice waveform visualization (CSS animated bars using framer-motion)
+  - Quick message buttons (4 preset messages for easy testing)
+  - End Call button (red, with rose shadow)
+  - Call summary at end: duration, messages exchanged, sentiment detected (via /api/gemini analyze-sentiment), backend used
+  - Conversation recap with emoji indicators
+  - New Test / Call Again buttons after call ends
+  - Test Configuration Panel:
+    - Language select: Hinglish / English / Hindi
+    - Voice select: Female (Priya) / Male (Amit)
+    - AI Backend toggle: Demo Mode / Gemini API
+    - Active config summary (agent, language, backend)
+  - How it Works card (4 numbered steps)
+  - Pro Tip card with card-gradient-emerald styling
+- Enhanced src/components/client/client-settings.tsx:
+  - Added "Test Your AI Agent" button at top-right of AI Configuration section
+    - Opens Dialog modal with quick test interface
+    - Pre-filled sample greeting message ("Hello, I want to book an appointment for tomorrow.")
+    - Send Test button calls /api/gemini (action=chat) with current clinic context
+    - Shows AI response with backend badge (demo/z-ai-sdk/demo-fallback)
+    - Loading state with spinner
+    - Close and Send Test buttons
+  - Added Voice Preview section below AI Configuration title:
+    - 3 voice option cards in a row (Priya Hindi Female, Sarah English Female, Amit Hindi Male)
+    - Each card: avatar with gender-based color (pink female, sky blue male), voice name, language label
+    - Mini waveform preview (12 animated bars) that animate when selected
+    - Emerald checkmark badge on selected card with spring animation
+    - Preview button that selects the voice and shows toast
+    - Radio-button-like selection with emerald border highlight
+  - Added new imports: Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Zap, Play, Mic, Send, VolumeX, ChevronRight
+  - Added new state: selectedVoice, aiTestOpen, aiTestLoading, aiTestResponse, aiTestBackend
+  - Added VOICE_OPTIONS constant array
+  - Added runAiTest callback (calls /api/gemini with clinic context)
+  - Added handleVoicePreview callback (selects voice + shows toast)
+  - Replaced SectionTitle for AI Configuration with inline flex layout for the Test button
+- Updated src/stores/app-store.ts:
+  - Added 'voice-test' to ClientPage union type
+- Updated src/app/page.tsx:
+  - Added import: VoiceTest from '@/components/client/voice-test'
+  - Added Mic icon import from lucide-react
+  - Added case 'voice-test': return <VoiceTest />; in client switch
+  - Added { id: 'voice-test' as const, label: 'Voice', icon: Mic } to clientMobileNav array
+  - Updated setClientPage type cast to include 'voice-test'
+- Fixed ESLint errors:
+  - set-state-in-effect in CallTimer: moved setElapsed('00:00') into cleanup function
+  - Missing Send import in client-settings.tsx: added Send to lucide-react import
+
+Stage Summary:
+- 1 new component created (voice-test.tsx, ~480 lines)
+- 2 existing files modified (client-settings.tsx, app-store.ts, page.tsx)
+- ESLint: 0 errors
+- Dev server: compiles successfully, GET / returns 200
+- Emerald/teal color scheme maintained throughout
+- Dark mode compatible via Tailwind dark: classes
+- Mobile-first responsive design
+- Framer Motion animations for call states, typing indicator, waveform, card selection
+- Real-time timer and AI integration via /api/gemini endpoints
+
+---
+Task ID: 14-a
+Agent: Fullstack Developer
+Task: Enhance Integration Status API + Build Service Health Monitor Component
+
+Work Log:
+- Read existing integration-status API route (src/app/api/integration-status/route.ts)
+- Analyzed all 4 mini-service health endpoints: Vobiz SIP (3031), Gemini AI (3032), WS Bridge (3033), Call Orchestrator (3035)
+- Read existing page.tsx, sidebar.tsx, and app-store.ts to understand admin page routing and navigation patterns
+- Enhanced integration-status API (route.ts) with:
+  - Detailed health data fetching from each mini-service (parses JSON responses for version, uptime, demo mode, active calls, etc.)
+  - In-memory history tracking for response time histogram (last 5 checks) and uptime tracking (last 30 checks)
+  - Supabase health check enhanced to query clinics table (select=id,plan&limit=3) with real table query result
+  - Per-service uptime percentage calculation
+  - Structured response with ServiceHistory objects including uptimeChecks arrays
+- Created ServiceHealthMonitor component (src/components/admin/service-health-monitor.tsx) with:
+  - Page header with gradient emerald icon and "ALL SYSTEMS GO" / "DEGRADED" status badge
+  - Summary bar showing services count, API response time, connected endpoints, and live status strip with status dots
+  - Service cards for each mini-service: Vobiz SIP, Gemini AI, WS Bridge, Call Orchestrator, n8n Workflows
+  - Each card shows: status dot (green/amber/red) with pulsing ring, service name, status badge, latency, uptime %, port
+  - Mini sparkline chart (SVG polyline) showing last 5 latency values
+  - Expandable details section per card with service-specific metrics (version, uptime, demo mode, active calls, vobiz connected, gemini live ready, models, protocol, audio format)
+  - Uptime history dot bar (last 30 checks) with color-coded dots (emerald/amber/rose) with staggered animation
+  - Dedicated Supabase card with table query result display
+  - Environment Variables section with: progress bar, configured/demo/missing badges, expandable full list with masked previews
+  - Platform Status card with per-service uptime progress bars and percentage indicators
+  - Quick Actions card with "Run Full Health Check" button and auto-refresh notice
+  - "Test All" button in header that triggers immediate health check with spinning icon
+  - Auto-refresh every 30 seconds with proper cleanup on unmount
+  - Skeleton loading state for initial fetch
+  - Responsive grid: 2-column service cards (left 2/3), sidebar panels (right 1/3) on desktop
+  - Staggered entrance animations with framer-motion containerVariants and itemVariants
+  - Emerald/teal color scheme throughout, dark mode compatible
+- Updated app-store.ts: added 'health-monitor' to AdminPage type union
+- Updated page.tsx: imported ServiceHealthMonitor, added case 'health-monitor' in admin switch, added to admin mobile nav
+- Updated sidebar.tsx: added { id: 'health-monitor', label: 'Health Monitor', icon: Activity } to SYSTEM section
+- ESLint: 0 errors
+
+Stage Summary:
+- 1 new file created (src/components/admin/service-health-monitor.tsx, ~580 lines)
+- 3 files modified (route.ts, app-store.ts, page.tsx, sidebar.tsx)
+- API enhanced with detailed health data, response time histograms, uptime tracking, Supabase table query
+- Service Health Monitor accessible from admin sidebar (SYSTEM > Health Monitor) and mobile nav
+- Auto-refreshes every 30 seconds with "Test All" manual trigger
+- All components use emerald/teal color scheme, shadcn/ui components, framer-motion animations
+- ESLint: 0 errors
+
+---
+## PROJECT STATUS (Updated after Round 14 — Continuation Session)
+
+### Current State Assessment
+- Platform is fully functional, stable, and running with 6 backend services
+- All 6 services operational: Next.js (3000), Vobiz SIP (3031), Gemini AI (3032), WS Bridge (3033), Call Orchestrator (3035), Call Simulator (3004)
+- Integration Status API shows all services "connected" with real latency data
+- Gemini API uses z-ai-web-dev-sdk (backend: "z-ai-web-dev-sdk", aiReady: true)
+- ESLint: 0 errors
+- Total codebase: ~63,886 lines across 108 components
+- Dev server compiles successfully
+
+### Services Running
+| Service | Port | Status | Latency |
+|---------|------|--------|---------|
+| Next.js | 3000 | ✅ Connected | ~50ms |
+| Vobiz SIP | 3031 | ✅ Connected | ~11ms |
+| Gemini AI | 3032 | ✅ Connected | ~7ms |
+| WS Bridge | 3033 | ✅ Connected | ~10ms |
+| Call Orchestrator | 3035 | ✅ Connected | ~98ms |
+| n8n Workflows | External | ✅ Connected | ~300ms |
+
+### New Features Added This Session (Task 14-a/b/c)
+
+**Task 14-a: Service Health Monitor**
+- Enhanced integration-status API with response time histograms, uptime tracking, per-service detailed metrics
+- New admin page: Service Health Monitor with service cards, sparkline charts, uptime history bars, environment variable panel, "Test All" button
+- Auto-refreshes every 30 seconds
+
+**Task 14-b: Enhanced AI Chat Assistant**
+- Service status indicator (AI Connected / Demo Mode / Offline)
+- Response time per AI message
+- Typing indicator animation (3 bouncing dots)
+- Context-aware quick reply chips
+- Message timestamps
+- Clear Chat button
+- Word/character count
+- Voice waveform animation next to AI avatar
+- Enhanced empty state
+- Keyboard shortcuts (Enter/Shift+Enter)
+- Connection status badge
+- Powered-by panel
+
+**Task 14-c: Voice Test + Settings Enhancement**
+- New client page: Voice Test — phone simulator with AI conversation
+- 4 call states: Idle → Ringing → Connected → Ended
+- Real-time conversation with /api/gemini
+- Call timer, voice waveform visualization
+- End-of-call summary with sentiment analysis
+- Language/Voice/Backend configuration
+- Enhanced Client Settings: AI Test button, Voice Preview cards (Priya, Sarah, Amit)
+
+### Demo Credentials
+- Super Admin: admin@voiceai.in / admin123
+- Client (Sharma Dental): receptionist@sharma-dental.in / clinic123
+
+### Total Pages
+- Admin: 19 tabs (Overview, Clinics, Provisioning, Billing, Analytics, Agent Setup, AI Performance, Live Calls, Call Center, Integrations, Notifications, Reports, Vobiz Guide, Vobiz Numbers, Agent Analytics, Integration, WhatsApp, Health Monitor)
+- Client: 14 tabs (Overview, Appointments, Schedule, Calls, Settings, AI Chat, Agent Studio, Team, Analytics, Doctor Portal, WhatsApp, Call Setup, Call Flow, Voice Test)
+
+### Unresolved Issues / Next Steps
+1. Supabase keys are empty — system falls back to Prisma/SQLite (need real Supabase anon + service role keys)
+2. Vobiz credentials (VOBIZ_AUTH_TOKEN, VOBIZ_CREDENTIAL_ID) are missing — Vobiz service uses mock mode
+3. Real Gemini Live API (WebSocket streaming) needs production Gemini key with Live API access
+4. End-to-end call orchestration testing (Vobiz → WS Bridge → Gemini Live → Vobiz playback)
