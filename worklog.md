@@ -3006,3 +3006,28 @@ Stage Summary:
 2. Vobiz credentials (VOBIZ_AUTH_TOKEN, VOBIZ_CREDENTIAL_ID) are missing — Vobiz service uses mock mode
 3. Real Gemini Live API (WebSocket streaming) needs production Gemini key with Live API access
 4. End-to-end call orchestration testing (Vobiz → WS Bridge → Gemini Live → Vobiz playback)
+
+---
+Task ID: 15
+Agent: Integration Developer
+Task: Connect to n8n MCP Server and List Workflows
+
+Work Log:
+- User provided MCP server URL: https://overdrive-applause-rimless.ngrok-free.dev
+- Authentication: Bearer token (Authorization: Bearer mypassword123)
+- Additional header: ngrok-skip-browser-warning: true
+- Tested SSE endpoint (/sse) — received session ID successfully
+- Tested Streamable HTTP endpoint (/mcp) with Accept: application/json, text/event-stream
+- Initialized MCP session (protocol version 2025-03-26) with session ID: f24adda3-7602-4f48-af3c-bf37a23f9045
+- Listed all 25 available MCP tools including workflow management, node documentation, validation, credentials, audit
+- Called n8n_list_workflows tool — retrieved 71 workflows
+- Server info: n8n Documentation MCP Server v2.47.8, uptime 3034s, healthy
+
+Stage Summary:
+- MCP server connected successfully via Streamable HTTP protocol
+- 25 tools available: workflow CRUD, execution management, node search, validation, templates, credentials, audit
+- 71 workflows found on n8n instance
+- 16 workflows are currently active (non-archived)
+- VoiceAI-tagged workflows (8 active): Appointment Booking Handler, Call Summary, Call Transfer & Escalation, Cancel, Check Availability, Reschedule, Test Connectivity, SQL Migration
+- JS-tagged workflows (6 active): Sahayak AI Agent, Priya Triage, Dispatch, Status Broadcaster, SLA Guardian, Feedback Collector, Watchdog Error Handler
+- Connection reusable via session ID for subsequent operations
