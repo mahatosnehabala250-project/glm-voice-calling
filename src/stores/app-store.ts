@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AdminPage = 'overview' | 'clinics' | 'provisioning' | 'billing' | 'analytics' | 'agent-setup' | 'ai-performance' | 'integrations' | 'live-calls' | 'notifications' | 'reports' | 'vobiz-guide' | 'vobiz-numbers' | 'agent-analytics' | 'call-center' | 'integration';
+export type AdminPage = 'overview' | 'clinics' | 'provisioning' | 'billing' | 'analytics' | 'agent-setup' | 'ai-performance' | 'integrations' | 'live-calls' | 'notifications' | 'reports' | 'vobiz-guide' | 'vobiz-numbers' | 'agent-analytics' | 'call-center' | 'integration' | 'whatsapp';
 export type ClientPage = 'overview' | 'appointments' | 'calls' | 'settings' | 'team' | 'analytics' | 'schedule' | 'ai-chat' | 'agent-studio' | 'doctor-portal' | 'whatsapp' | 'call-setup' | 'call-flow';
 
 interface AppState {

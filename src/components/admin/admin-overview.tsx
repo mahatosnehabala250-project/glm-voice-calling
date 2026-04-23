@@ -482,7 +482,7 @@ function OrchestrationPipeline() {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Pipeline diagram */
+        {/* Pipeline diagram */}
         <div className="flex items-center gap-1 overflow-x-auto pb-2">
           {pipelineNodes.map((node, i) => {
             const Icon = node.icon;
@@ -517,7 +517,7 @@ function OrchestrationPipeline() {
           })}
         </div>
 
-        {/* Active calls + result */
+        {/* Active calls + result */}
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Phone className="w-3 h-3 text-emerald-500" />

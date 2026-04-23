@@ -32,6 +32,7 @@ import VobizGuide from '@/components/admin/vobiz-guide';
 import AgentAnalyticsDashboard from '@/components/admin/agent-analytics';
 import VobizNumbers from '@/components/admin/vobiz-numbers';
 import AdminIntegration from '@/components/admin/admin-integration';
+import AdminWhatsApp from '@/components/admin/admin-whatsapp';
 
 import ClientOverview from '@/components/client/client-overview';
 import ClientAppointments from '@/components/client/client-appointments';
@@ -40,10 +41,11 @@ import ClientSettings from '@/components/client/client-settings';
 import AIChatAssistant from '@/components/client/ai-chat-assistant';
 import BookingAssistant from '@/components/client/booking-assistant';
 import TeamMembers from '@/components/client/team-members';
+import ClientTeam from '@/components/client/client-team';
 import ClientAnalytics from '@/components/client/client-analytics';
 import WeeklySchedule from '@/components/client/weekly-schedule';
 import DoctorPortal from '@/components/client/doctor-portal';
-import WhatsAppCenter from '@/components/client/whatsapp-center';
+import WhatsAppCenter from '@/components/shared/whatsapp-center';
 import VobizCallSetup from '@/components/client/vobiz-call-setup';
 import AgentStudio from '@/components/client/agent-studio';
 import NotificationsWidget from '@/components/client/notifications-widget';
@@ -370,6 +372,7 @@ export default function Home() {
 
   const [hapticIndex, setHapticIndex] = useState<string | null>(null);
   const [bookingBotOpen, setBookingBotOpen] = useState(false);
+  const [whatsappSheetOpen, setWhatsappSheetOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   // WebSocket live call simulation (client only)
@@ -476,6 +479,7 @@ export default function Home() {
         case 'vobiz-numbers': return <VobizNumbers />;
         case 'agent-analytics': return <AgentAnalyticsDashboard />;
         case 'integration': return <AdminIntegration />;
+        case 'whatsapp': return <AdminWhatsApp />;
         default: return <AdminOverview />;
       }
     } else {
@@ -487,10 +491,10 @@ export default function Home() {
         case 'settings': return <ClientSettings />;
         case 'ai-chat': return <AIChatAssistant />;
         case 'agent-studio': return <AgentStudio />;
-        case 'team': return <TeamMembers />;
+        case 'team': return <ClientTeam />;
         case 'analytics': return <ClientAnalytics />;
         case 'doctor-portal': return <DoctorPortal />;
-        case 'whatsapp': return <WhatsAppCenter />;
+        case 'whatsapp': return <WhatsAppCenter open={whatsappSheetOpen} onOpenChange={setWhatsappSheetOpen} scope="client" />;
         case 'call-setup': return <VobizCallSetup />;
         case 'call-flow': return <CallFlowExplorer />;
         default: return <ClientOverview />;
@@ -610,7 +614,7 @@ export default function Home() {
       {role === 'client' && (
         <>
           <motion.div
-            className="fixed bottom-24 lg:bottom-8 right-6 z-40"
+            className="fixed bottom-24 lg:bottom-8 right-20 z-40"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 1.2, type: 'spring', stiffness: 260, damping: 20 }}
@@ -645,9 +649,47 @@ export default function Home() {
             </motion.div>
           </motion.div>
 
+          {/* WhatsApp Quick Send FAB */}
+          <motion.div
+            className="fixed bottom-24 lg:bottom-8 right-6 z-40"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 1.4, type: 'spring', stiffness: 260, damping: 20 }}
+          >
+            <motion.button
+              onClick={() => setWhatsappSheetOpen(true)}
+              className="relative w-12 h-12 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] text-white shadow-xl shadow-[#25D366]/30 flex items-center justify-center hover:shadow-[#25D366]/50 transition-shadow duration-300"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.92 }}
+            >
+              <MessageCircle className="w-5 h-5" />
+              {/* Unread count badge */}
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 border-2 border-white dark:border-slate-950 flex items-center justify-center">
+                <span className="text-[9px] font-bold text-white">3</span>
+              </span>
+            </motion.button>
+            {/* Tooltip */}
+            <motion.div
+              className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-slate-900 dark:bg-slate-700 text-white text-xs font-medium rounded-lg shadow-lg whitespace-nowrap"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2, duration: 0.3 }}
+            >
+              WhatsApp 💬
+              <span className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900 dark:border-t-slate-700" />
+            </motion.div>
+          </motion.div>
+
           <BookingAssistant
             open={bookingBotOpen}
             onOpenChange={setBookingBotOpen}
+          />
+
+          {/* WhatsApp Center Sheet - client */}
+          <WhatsAppCenter
+            open={whatsappSheetOpen}
+            onOpenChange={setWhatsappSheetOpen}
+            scope="client"
           />
         </>
       )}

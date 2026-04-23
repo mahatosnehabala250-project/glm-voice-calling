@@ -57,6 +57,7 @@ const adminSections: NavSection[] = [
     items: [
       { id: 'live-calls', label: 'Live Calls', icon: PhoneCall },
       { id: 'call-center', label: 'Call Center', icon: Headphones },
+      { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, badge: 3 },
     ],
   },
   {
