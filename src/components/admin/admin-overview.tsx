@@ -6,7 +6,8 @@ import {
   Building2, Phone, CalendarCheck, IndianRupee, Activity,
   Clock, Globe, MessageSquare, Zap, TrendingUp, Brain, Star, Timer, Target, UserCheck,
   Trophy, Medal, Radio, MapPin, RefreshCw, PhoneIncoming, PhoneOff, MessageCircle, CalendarPlus,
-  Bell, AlertTriangle, Shield, Info, ArrowRight
+  Bell, AlertTriangle, Shield, Info, ArrowRight, GitBranch, Database, Workflow, Play,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -275,6 +276,275 @@ function LiveActivityFeed() {
   );
 }
 
+// --- Service Health Monitor ---
+interface ServiceStatus {
+  name: string;
+  icon: string;
+  status: string;
+  latency: number;
+}
+
+interface IntegrationStatusData {
+  status: string;
+  services: ServiceStatus[];
+}
+
+const SERVICE_ICON_MAP: Record<string, typeof Phone> = {
+  phone: Phone,
+  brain: Brain,
+  radio: Radio,
+  'git-branch': GitBranch,
+  workflow: Workflow,
+};
+
+function ServiceHealthMonitor() {
+  const [serviceData, setServiceData] = useState<IntegrationStatusData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/integration-status');
+        if (res.ok) {
+          setServiceData(await res.json());
+        }
+      } catch (_e) { /* silently fail */ }
+      finally { setLoading(false); }
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    if (status === 'connected') return { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800' };
+    if (status === 'degraded') return { dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800' };
+    return { dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20', border: 'border-rose-200 dark:border-rose-800' };
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'connected') return 'Connected';
+    if (status === 'degraded') return 'Degraded';
+    return 'Offline';
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  };
+
+  const staggerItem = {
+    hidden: { opacity: 0, y: 12, scale: 0.95 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4 } },
+  };
+
+  return (
+    <Card className="border-slate-200 dark:border-slate-800">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Activity className="w-4 h-4 text-emerald-500" />
+          Service Health Monitor
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">LIVE</span>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading && !serviceData ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="rounded-xl glass-card border border-slate-200/60 dark:border-slate-700/60 p-4">
+                <Skeleton className="h-8 w-8 rounded-lg mb-2" />
+                <Skeleton className="h-3 w-16 mb-1" />
+                <Skeleton className="h-2 w-12" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {(serviceData?.services || []).map((svc) => {
+              const colors = getStatusColor(svc.status);
+              const IconComponent = SERVICE_ICON_MAP[svc.icon] || Activity;
+              return (
+                <motion.div
+                  key={svc.name}
+                  variants={staggerItem}
+                  whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+                  className={cn(
+                    'rounded-xl glass-card border p-4 transition-colors cursor-default',
+                    colors.border
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center', colors.bg)}>
+                      <IconComponent className={cn('w-4 h-4', colors.text)} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn('w-2 h-2 rounded-full', colors.dot)}>
+                        {svc.status === 'connected' && (
+                          <span className="absolute inset-0 rounded-full animate-ping opacity-40 bg-emerald-400" />
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{svc.name}</p>
+                  <p className={cn('text-[10px] font-medium mt-0.5', colors.text)}>{getStatusLabel(svc.status)}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{svc.latency > 0 ? `${svc.latency}ms` : '--'}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">Auto-refreshes every 30s</p>
+          <p className={cn(
+            'text-[10px] font-medium',
+            serviceData?.status === 'operational' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+          )}>
+            Overall: {serviceData?.status || 'unknown'}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- Orchestration Pipeline ---
+function OrchestrationPipeline() {
+  const [healthData, setHealthData] = useState<{ activeCalls?: number; status?: string } | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch('/api/orchestrator?action=health');
+        if (res.ok) {
+          setHealthData(await res.json());
+        }
+      } catch (_e) { /* silently fail */ }
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pipelineNodes = [
+    { label: 'Vobiz SIP', icon: Phone, id: 'vobiz' },
+    { label: 'WS Bridge', icon: Radio, id: 'ws-bridge' },
+    { label: 'Gemini AI', icon: Brain, id: 'gemini' },
+    { label: 'n8n', icon: Workflow, id: 'n8n' },
+    { label: 'Database', icon: Database, id: 'db' },
+  ];
+
+  const handleTestPipeline = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/orchestrator?action=test', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setTestResult(data.success ? 'Pipeline test passed!' : 'Pipeline test failed.');
+      } else {
+        setTestResult('Pipeline test failed.');
+      }
+    } catch (_e) {
+      setTestResult('Could not reach orchestrator.');
+    }
+    setTesting(false);
+  };
+
+  return (
+    <Card className="border-slate-200 dark:border-slate-800">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <GitBranch className="w-4 h-4 text-teal-500" />
+            Call Orchestration Pipeline
+          </CardTitle>
+          <Button
+            size="sm"
+            onClick={handleTestPipeline}
+            disabled={testing}
+            className="h-7 px-3 text-xs bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+          >
+            {testing ? (
+              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+            ) : (
+              <Play className="w-3 h-3 mr-1" />
+            )}
+            Test Pipeline
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Pipeline diagram */
+        <div className="flex items-center gap-1 overflow-x-auto pb-2">
+          {pipelineNodes.map((node, i) => {
+            const Icon = node.icon;
+            const isConnected = i < 3; // first 3 always connected
+            return (
+              <div key={node.id} className="flex items-center gap-1 flex-shrink-0">
+                <div className={cn(
+                  'flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-xl border transition-colors min-w-[72px]',
+                  isConnected
+                    ? 'glass-card border-emerald-200 dark:border-emerald-800'
+                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                )}>
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center',
+                    isConnected ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800'
+                  )}>
+                    <Icon className={cn('w-5 h-5', isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400')} />
+                  </div>
+                  <span className={cn('text-[10px] font-medium text-center', isConnected ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400')}>
+                    {node.label}
+                  </span>
+                  <span className={cn(
+                    'w-1.5 h-1.5 rounded-full',
+                    isConnected ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                  )} />
+                </div>
+                {i < pipelineNodes.length - 1 && (
+                  <ChevronRight className={cn('w-4 h-4 flex-shrink-0', isConnected ? 'text-emerald-400' : 'text-slate-300 dark:text-slate-600')} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Active calls + result */
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Phone className="w-3 h-3 text-emerald-500" />
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Active Calls: <span className="font-bold text-slate-700 dark:text-slate-300">{healthData?.activeCalls ?? '--'}</span>
+            </span>
+          </div>
+          {testResult && (
+            <motion.span
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={cn(
+                'text-xs font-medium px-2 py-0.5 rounded-full',
+                testResult.includes('passed')
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                  : 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400'
+              )}
+            >
+              {testResult}
+            </motion.span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // --- Geographic Distribution Data ---
 const GEO_DATA = [
   { city: 'New Delhi', calls: 42 },
@@ -299,7 +569,7 @@ export default function AdminOverview() {
       try {
         const res = await fetch('/api/admin/metrics');
         if (res.ok) setData(await res.json());
-      } catch { /* silently fail */ }
+      } catch (_e) { /* silently fail */ }
       finally { setLoading(false); }
     };
     fetchMetrics();
@@ -314,7 +584,7 @@ export default function AdminOverview() {
           const d = await res.json();
           setRecentAlerts((d.notifications || []).slice(0, 5));
         }
-      } catch { /* silently fail */ }
+      } catch (_e) { /* silently fail */ }
     };
     fetchAlerts();
   }, []);
@@ -997,6 +1267,16 @@ export default function AdminOverview() {
           </Card>
         </motion.div>
       )}
+
+      {/* Service Health Monitor */}
+      <motion.div variants={item}>
+        <ServiceHealthMonitor />
+      </motion.div>
+
+      {/* Orchestration Pipeline */}
+      <motion.div variants={item}>
+        <OrchestrationPipeline />
+      </motion.div>
 
       {/* AI Performance Dashboard */}
       <motion.div variants={item}>

@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, RotateCcw, CheckCircle, MessageSquare, Smartphone } from 'lucide-react';
+import { Bot, User, RotateCcw, CheckCircle, MessageSquare, Smartphone, Send, Sparkles, Loader2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface AiChatSimulatorProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface AiChatSimulatorProps {
 interface ChatMessage {
   role: 'ai' | 'caller';
   text: string;
+  responseTime?: number;
 }
 
 const CONVERSATION: ChatMessage[] = [
@@ -58,14 +60,24 @@ function TypingIndicator() {
 }
 
 export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorProps) {
+  const { user } = useAuthStore();
+  const [mode, setMode] = useState<'demo' | 'live'>('demo');
   const [visibleMessages, setVisibleMessages] = useState<ChatMessage[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showSummary, setShowSummary] = useState(false);
+  const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+  const [liveInput, setLiveInput] = useState('');
+  const [isLiveTyping, setIsLiveTyping] = useState(false);
+  const [lastResponseTime, setLastResponseTime] = useState<number | null>(null);
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const liveScrollRef = useRef<HTMLDivElement>(null);
+  const liveInputRef = useRef<HTMLInputElement>(null);
 
+  // --- Demo mode logic ---
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -101,7 +113,7 @@ export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorP
   }, [speed, clearTimer]);
 
   useEffect(() => {
-    if (open) {
+    if (open && mode === 'demo') {
       startConversation();
     } else {
       clearTimer();
@@ -111,7 +123,7 @@ export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorP
       setShowSummary(false);
     }
     return clearTimer;
-  }, [open, startConversation, clearTimer]);
+  }, [open, mode, startConversation, clearTimer]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -119,9 +131,83 @@ export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorP
     }
   }, [visibleMessages, isTyping]);
 
+  // --- Live mode scroll ---
+  useEffect(() => {
+    if (liveScrollRef.current) {
+      liveScrollRef.current.scrollTop = liveScrollRef.current.scrollHeight;
+    }
+  }, [liveMessages, isLiveTyping]);
+
+  // --- Live AI chat ---
+  const handleSendLiveMessage = useCallback(async () => {
+    const msg = liveInput.trim();
+    if (!msg || isLiveTyping) return;
+
+    setLiveInput('');
+    setLiveMessages(prev => [...prev, { role: 'caller', text: msg }]);
+    setIsLiveTyping(true);
+    setLastResponseTime(null);
+
+    const startTime = Date.now();
+    try {
+      const res = await fetch('/api/gemini?action=chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          clinicContext: {
+            clinicName: user?.clinicName || 'Sharma Dental',
+            doctorName: user?.name || 'Dr. Sharma',
+          },
+        }),
+      });
+      const data = await res.json();
+      const elapsed = Date.now() - startTime;
+      setLastResponseTime(elapsed);
+
+      if (data.success && data.response) {
+        setLiveMessages(prev => [...prev, { role: 'ai', text: data.response, responseTime: elapsed }]);
+      } else {
+        setLiveMessages(prev => [...prev, { role: 'ai', text: 'Sorry, I could not process your request. Please try again.', responseTime: elapsed }]);
+      }
+    } catch {
+      const elapsed = Date.now() - startTime;
+      setLastResponseTime(elapsed);
+      setLiveMessages(prev => [...prev, { role: 'ai', text: 'Network error. Please check your connection and try again.', responseTime: elapsed }]);
+    }
+    setIsLiveTyping(false);
+  }, [liveInput, isLiveTyping, user]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendLiveMessage();
+    }
+  }, [handleSendLiveMessage]);
+
+  // Reset live messages when switching modes
+  useEffect(() => {
+    setLiveMessages([]);
+    setIsLiveTyping(false);
+    setLastResponseTime(null);
+    setLiveInput('');
+  }, [mode]);
+
+  // Focus input when opening in live mode
+  useEffect(() => {
+    if (open && mode === 'live') {
+      setTimeout(() => liveInputRef.current?.focus(), 300);
+    }
+  }, [open, mode]);
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const modeLabel = mode === 'demo' ? 'Demo Mode' : 'Live Mode';
+  const modeDescription = mode === 'demo'
+    ? 'Watch how our AI handles a real patient call automatically'
+    : 'Chat directly with the Gemini AI voice agent in real-time';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,12 +215,45 @@ export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorP
         {/* Dialog header */}
         <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 px-6 py-4">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white text-lg">
-              <Smartphone className="w-5 h-5" />
-              AI Voice Agent — Live Demo
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-white text-lg">
+                <Smartphone className="w-5 h-5" />
+                AI Voice Agent
+              </DialogTitle>
+              {/* Mode toggle */}
+              <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-full p-0.5 border border-white/20">
+                <button
+                  onClick={() => setMode('demo')}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200',
+                    mode === 'demo'
+                      ? 'bg-white text-emerald-700 shadow-sm'
+                      : 'text-white/80 hover:text-white'
+                  )}
+                >
+                  <span className="flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    Demo
+                  </span>
+                </button>
+                <button
+                  onClick={() => setMode('live')}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200',
+                    mode === 'live'
+                      ? 'bg-white text-emerald-700 shadow-sm'
+                      : 'text-white/80 hover:text-white'
+                  )}
+                >
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Live
+                  </span>
+                </button>
+              </div>
+            </div>
             <DialogDescription className="text-emerald-100">
-              Watch how our AI handles a real patient call automatically
+              {modeDescription}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -146,78 +265,204 @@ export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorP
             <span className="text-xs text-slate-400 font-mono">9:41 AM</span>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs text-emerald-400 font-medium">Live Call</span>
+              <span className="text-xs text-emerald-400 font-medium">
+                {mode === 'demo' ? 'Live Call' : 'AI Chat'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Speed controls */}
-              {[1, 2, 3].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSpeed(s)}
-                  className={cn(
-                    'px-2 py-0.5 rounded text-[10px] font-bold transition-colors',
-                    speed === s
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-white'
-                  )}
-                >
-                  {s}x
-                </button>
-              ))}
+              {/* Speed controls - only in demo mode */}
+              {mode === 'demo' && (
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSpeed(s)}
+                      className={cn(
+                        'px-2 py-0.5 rounded text-[10px] font-bold transition-colors',
+                        speed === s
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-slate-800 text-slate-400 hover:text-white'
+                      )}
+                    >
+                      {s}x
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Response time badge - only in live mode */}
+              {mode === 'live' && lastResponseTime !== null && (
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5">
+                  {lastResponseTime}ms
+                </Badge>
+              )}
             </div>
           </div>
 
-          {/* Chat area */}
-          <div ref={scrollRef} className="h-[420px] overflow-y-auto px-4 py-4 space-y-3">
-            {visibleMessages.map((msg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={cn('flex', msg.role === 'caller' ? 'justify-start' : 'justify-end')}
-              >
-                <div className={cn(
-                  'max-w-[80%] rounded-2xl px-4 py-2.5',
-                  msg.role === 'caller'
-                    ? 'bg-slate-800 text-slate-200 rounded-bl-md'
-                    : 'bg-emerald-600 text-white rounded-br-md'
-                )}>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {msg.role === 'caller' ? (
-                      <User className="w-3 h-3 opacity-60" />
-                    ) : (
+          {/* Demo Mode Chat */}
+          {mode === 'demo' && (
+            <div ref={scrollRef} className="h-[420px] overflow-y-auto px-4 py-4 space-y-3">
+              {visibleMessages.map((msg, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={cn('flex', msg.role === 'caller' ? 'justify-start' : 'justify-end')}
+                >
+                  <div className={cn(
+                    'max-w-[80%] rounded-2xl px-4 py-2.5',
+                    msg.role === 'caller'
+                      ? 'bg-slate-800 text-slate-200 rounded-bl-md'
+                      : 'bg-emerald-600 text-white rounded-br-md'
+                  )}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      {msg.role === 'caller' ? (
+                        <User className="w-3 h-3 opacity-60" />
+                      ) : (
+                        <Bot className="w-3 h-3 opacity-60" />
+                      )}
+                      <span className="text-[10px] font-medium opacity-60">
+                        {msg.role === 'caller' ? 'Rahul Kumar' : 'Rekha (AI)'}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{msg.text}</p>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Typing indicator */}
+              {isTyping && !isComplete && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-end"
+                >
+                  <div className="bg-emerald-600 text-white rounded-2xl rounded-br-md px-4 py-3">
+                    <div className="flex items-center gap-1.5 mb-1">
                       <Bot className="w-3 h-3 opacity-60" />
+                      <span className="text-[10px] font-medium opacity-60">Rekha (AI)</span>
+                    </div>
+                    <TypingIndicator />
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Live Mode Chat */}
+          {mode === 'live' && (
+            <div className="flex flex-col h-[420px]">
+              <div ref={liveScrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                {/* Welcome message */}
+                {liveMessages.length === 0 && !isLiveTyping && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex justify-center"
+                  >
+                    <div className="bg-slate-800/50 text-slate-400 rounded-2xl px-4 py-3 text-center max-w-[80%]">
+                      <div className="flex items-center justify-center gap-1.5 mb-2">
+                        <Bot className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-medium text-emerald-400">Gemini AI Voice Agent</span>
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {user?.clinicName
+                          ? `Ask me anything about ${user.clinicName}! I can help with appointments, services, timings, and more.`
+                          : 'Ask me anything about this clinic! I can help with appointments, services, timings, and more.'}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {liveMessages.map((msg, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={cn('flex', msg.role === 'caller' ? 'justify-start' : 'justify-end')}
+                  >
+                    <div className={cn(
+                      'max-w-[80%] rounded-2xl px-4 py-2.5 relative',
+                      msg.role === 'caller'
+                        ? 'bg-slate-800 text-slate-200 rounded-bl-md'
+                        : 'bg-emerald-600 text-white rounded-br-md'
+                    )}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        {msg.role === 'caller' ? (
+                          <User className="w-3 h-3 opacity-60" />
+                        ) : (
+                          <Bot className="w-3 h-3 opacity-60" />
+                        )}
+                        <span className="text-[10px] font-medium opacity-60">
+                          {msg.role === 'caller' ? (user?.name || 'You') : 'Gemini AI'}
+                        </span>
+                        {msg.responseTime && (
+                          <span className="text-[9px] opacity-40 ml-auto">{msg.responseTime}ms</span>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed">{msg.text}</p>
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* Live typing indicator */}
+                {isLiveTyping && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-end"
+                  >
+                    <div className="bg-emerald-600 text-white rounded-2xl rounded-br-md px-4 py-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Bot className="w-3 h-3 opacity-60" />
+                        <span className="text-[10px] font-medium opacity-60">Gemini AI</span>
+                      </div>
+                      <TypingIndicator />
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Live input */}
+              <div className="px-4 pb-3 pt-2 border-t border-slate-800/50">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={liveInputRef}
+                    type="text"
+                    value={liveInput}
+                    onChange={(e) => setLiveInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type a message..."
+                    disabled={isLiveTyping}
+                    className="flex-1 bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 disabled:opacity-50 transition-all"
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSendLiveMessage}
+                    disabled={isLiveTyping || !liveInput.trim()}
+                    className={cn(
+                      'w-10 h-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0',
+                      liveInput.trim() && !isLiveTyping
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+                        : 'bg-slate-800 text-slate-500'
                     )}
-                    <span className="text-[10px] font-medium opacity-60">
-                      {msg.role === 'caller' ? 'Rahul Kumar' : 'Rekha (AI)'}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                  >
+                    {isLiveTyping ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </motion.button>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </div>
+          )}
 
-            {/* Typing indicator */}
-            {isTyping && !isComplete && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-end"
-              >
-                <div className="bg-emerald-600 text-white rounded-2xl rounded-br-md px-4 py-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Bot className="w-3 h-3 opacity-60" />
-                    <span className="text-[10px] font-medium opacity-60">Rekha (AI)</span>
-                  </div>
-                  <TypingIndicator />
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Summary card */}
-          {showSummary && (
+          {/* Summary card - Demo mode only */}
+          {mode === 'demo' && showSummary && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -268,19 +513,21 @@ export default function AiChatSimulator({ open, onOpenChange }: AiChatSimulatorP
 
           {/* Bottom actions */}
           <div className="px-4 pb-4">
-            {isComplete && (
+            {(isComplete || (mode === 'live' && liveMessages.length > 0)) && (
               <div className="flex gap-3">
-                <Button
-                  onClick={startConversation}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Restart Demo
-                </Button>
+                {mode === 'demo' && (
+                  <Button
+                    onClick={startConversation}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Restart Demo
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                  className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
                 >
                   Close
                 </Button>

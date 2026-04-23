@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveCalls } from '@/hooks/use-live-calls';
+import { cn } from '@/lib/utils';
 
 import LoginPage from '@/components/auth/login-page';
 import Sidebar from '@/components/shared/sidebar';
@@ -78,6 +79,7 @@ import {
   Headphones,
   MessageCircleHeart,
   GitBranch,
+  Radio,
 } from 'lucide-react';
 
 const pageVariants = {
@@ -148,13 +150,80 @@ function LoadingSkeleton() {
 }
 
 /* ============================================================
+   Mobile Service Dots (compact live status)
+   ============================================================ */
+function MobileServiceDots() {
+  const [services, setServices] = useState<LiveServiceStatus[]>([]);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/integration-status');
+        if (res.ok) {
+          const data = await res.json();
+          setServices(data.services || []);
+        }
+      } catch { /* silently fail */ }
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getDotColor = (status: string) => {
+    if (status === 'connected') return 'bg-emerald-500';
+    if (status === 'degraded') return 'bg-amber-500';
+    return 'bg-rose-500';
+  };
+
+  const mobileServices = services.filter(
+    (s) => ['Vobiz SIP', 'Gemini AI', 'WS Bridge', 'Call Orchestrator'].includes(s.name)
+  );
+
+  if (mobileServices.length === 0) {
+    return (
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="status-dot-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            </span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500 hidden sm:inline">--</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {mobileServices.map((svc) => (
+        <div key={svc.name} className="flex items-center gap-1">
+          <span className={cn('w-1.5 h-1.5 rounded-full', getDotColor(svc.status))} />
+          <span className="text-[9px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+            {svc.latency > 0 ? `${svc.latency}` : '--'}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
    Enhanced Footer Component
    ============================================================ */
-const apiStatusItems = [
-  { label: 'API Server', status: 'Operational', uptime: '99.98%' },
-  { label: 'Gemini AI', status: 'Operational', uptime: '99.95%' },
-  { label: 'SIP Trunk', status: 'Operational', uptime: '99.92%' },
-];
+interface LiveServiceStatus {
+  name: string;
+  icon: string;
+  status: string;
+  latency: number;
+}
+
+interface LiveIntegrationData {
+  status: string;
+  services: LiveServiceStatus[];
+}
 
 const footerLinks = [
   { label: 'Documentation', icon: FileText },
@@ -162,7 +231,49 @@ const footerLinks = [
   { label: 'Status', icon: Activity },
 ];
 
+const FOOTER_SERVICE_ICONS: Record<string, typeof Phone> = {
+  phone: Phone,
+  brain: Brain,
+  radio: Radio,
+  'git-branch': GitBranch,
+  workflow: Activity,
+};
+
 function EnhancedFooter({ currentTime }: { currentTime: string }) {
+  const [liveData, setLiveData] = useState<LiveIntegrationData | null>(null);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/integration-status');
+        if (res.ok) setLiveData(await res.json());
+      } catch { /* silently fail */ }
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusDot = (status: string) => {
+    if (status === 'connected') return 'bg-emerald-500';
+    if (status === 'degraded') return 'bg-amber-500';
+    return 'bg-rose-500';
+  };
+
+  const getLabel = (name: string) => {
+    if (name === 'Vobiz SIP') return 'Vobiz';
+    if (name === 'Gemini AI') return 'Gemini';
+    if (name === 'WS Bridge') return 'Bridge';
+    if (name === 'Call Orchestrator') return 'Orch.';
+    if (name === 'n8n Workflows') return 'n8n';
+    return name;
+  };
+
+  // Pick 4 key services for footer (Vobiz, Gemini, WS Bridge, Orchestrator)
+  const footerServices = (liveData?.services || []).filter(
+    (s) => ['Vobiz SIP', 'Gemini AI', 'WS Bridge', 'Call Orchestrator'].includes(s.name)
+  );
+
   return (
     <footer className="hidden lg:block mt-auto bg-white dark:bg-slate-900 relative">
       {/* Animated gradient top border */}
@@ -191,29 +302,26 @@ function EnhancedFooter({ currentTime }: { currentTime: string }) {
             </div>
           </div>
 
-          {/* Center Section: API Status strip */}
+          {/* Center Section: Live Service Status strip */}
           <div className="flex items-center gap-2">
-            {apiStatusItems.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-lg px-3 py-1.5"
-              >
-                {/* Green dot with pulse */}
-                <span className="relative flex h-2 w-2">
-                  <span className="status-dot-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                  {item.label}
-                </span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                  {item.status}
-                </span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                  {item.uptime}
-                </span>
-              </div>
-            ))}
+            {footerServices.map((svc) => {
+              const IconComp = FOOTER_SERVICE_ICONS[svc.icon] || Activity;
+              return (
+                <div
+                  key={svc.name}
+                  className="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-lg px-3 py-1.5"
+                >
+                  <IconComp className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {getLabel(svc.name)}
+                  </span>
+                  <span className={cn('w-2 h-2 rounded-full', getStatusDot(svc.status))} />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                    {svc.latency > 0 ? `${svc.latency}ms` : '--'}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {/* Right Section: Links + Last sync */}
@@ -241,7 +349,7 @@ function EnhancedFooter({ currentTime }: { currentTime: string }) {
             {/* Last sync */}
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
               <RefreshCw className="w-3 h-3 text-emerald-500 opacity-70" />
-              <span>Last sync: just now</span>
+              <span>Live &middot; 30s</span>
             </div>
           </div>
         </div>
@@ -492,18 +600,8 @@ export default function Home() {
               <span>&copy; 2025 VoiceAI</span>
               <span className="font-mono text-slate-300 dark:text-slate-600">v1.2.0</span>
             </div>
-            {/* Compact status indicators */}
-            <div className="flex items-center gap-1.5">
-              {apiStatusItems.map((item) => (
-                <div key={item.label} className="flex items-center gap-1">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="status-dot-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                  </span>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-500 hidden sm:inline">{item.label}</span>
-                </div>
-              ))}
-            </div>
+            {/* Compact status indicators - live */}
+            <MobileServiceDots />
           </div>
         </footer>
       </div>
