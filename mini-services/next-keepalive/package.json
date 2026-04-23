@@ -1,0 +1,6 @@
+{
+  "name": "next-keepalive",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  }
+}
