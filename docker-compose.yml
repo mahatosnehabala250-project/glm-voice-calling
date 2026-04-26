@@ -1,0 +1,249 @@
+# ============================================================
+# VoiceAI SaaS - Full Stack Docker Compose Deployment
+# ============================================================
+# Usage:
+#   cp .env.example .env  # Then edit .env with your credentials
+#   docker compose up -d
+#   docker compose logs -f  # View logs
+# ============================================================
+
+services:
+  # ────────────────────────────────────────────────────
+  # Main Next.js Application
+  # ────────────────────────────────────────────────────
+  voiceai-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voiceai-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-file:/app/db/custom.db}
+    volumes:
+      # Persist the SQLite database (local dev only; use Supabase for production)
+      - app-db:/app/db
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/route"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ────────────────────────────────────────────────────
+  # Vobiz SIP Integration Service
+  # ────────────────────────────────────────────────────
+  vobiz-sip:
+    build:
+      context: ./mini-services/vobiz-sip-service
+      dockerfile: Dockerfile
+    container_name: vobiz-sip
+    restart: unless-stopped
+    ports:
+      - "3031:3031"
+    env_file:
+      - .env
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3031/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+        reservations:
+          memory: 64M
+          cpus: "0.1"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────────────
+  # Gemini AI Integration Service
+  # ────────────────────────────────────────────────────
+  gemini-ai:
+    build:
+      context: ./mini-services/gemini-ai-service
+      dockerfile: Dockerfile
+    container_name: gemini-ai
+    restart: unless-stopped
+    ports:
+      - "3032:3032"
+    env_file:
+      - .env
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3032/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.1"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────────────
+  # WebSocket Bridge Service
+  # ────────────────────────────────────────────────────
+  ws-bridge:
+    build:
+      context: ./mini-services/ws-bridge
+      dockerfile: Dockerfile
+    container_name: ws-bridge
+    restart: unless-stopped
+    ports:
+      - "3033:3033"
+    env_file:
+      - .env
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3033/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.1"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────────────
+  # Call Simulator Service
+  # ────────────────────────────────────────────────────
+  call-simulator:
+    build:
+      context: ./mini-services/call-simulator
+      dockerfile: Dockerfile
+    container_name: call-simulator
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    env_file:
+      - .env
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/socket.io/?EIO=4&transport=polling"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+        reservations:
+          memory: 64M
+          cpus: "0.05"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ────────────────────────────────────────────────────
+  # Call Orchestrator Service
+  # ────────────────────────────────────────────────────
+  call-orchestrator:
+    build:
+      context: ./mini-services/call-orchestrator
+      dockerfile: Dockerfile
+    container_name: call-orchestrator
+    restart: unless-stopped
+    ports:
+      - "3035:3035"
+    env_file:
+      - .env
+    depends_on:
+      voiceai-app:
+        condition: service_healthy
+      vobiz-sip:
+        condition: service_healthy
+      gemini-ai:
+        condition: service_healthy
+      ws-bridge:
+        condition: service_healthy
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3035/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.1"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  app-db:
+    driver: local
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  voiceai-network:
+    driver: bridge
+    name: voiceai-network

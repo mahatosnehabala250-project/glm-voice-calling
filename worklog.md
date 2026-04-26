@@ -3204,3 +3204,35 @@ Stage Summary:
 - Cross-workflow communication architecture established
 - Supabase + Gemini + WhatsApp integration points defined
 - Scheduled workflows (daily report + no-show follow-up) configured for IST timezone
+---
+Task ID: Deploy-Analysis
+Agent: Main Architect
+Task: Deployment platform analysis, architecture comparison page, and Docker deployment configuration
+
+Work Log:
+- Analyzed full project architecture: 6 microservices (Next.js :3000, Vobiz SIP :3031, Gemini AI :3032, WS Bridge :3033, Call Simulator :3004, Call Orchestrator :3035)
+- Evaluated 5 deployment platforms: Vercel, Railway, Coolify on VPS, AWS, Hostinger
+- Created comprehensive deployment guide component (src/components/shared/deployment-guide.tsx)
+  - 4-tab interface: Overview, Platforms, Architecture, Quick Start
+  - 5 platform comparison cards with verdict badges (✅ RECOMMENDED / ❌ NOT SUITABLE / ⚠️ LIMITED)
+  - Visual CSS architecture diagram showing all 6 services and their connections
+  - Quick comparison matrix table
+  - Railway 6-step deployment guide with copy-able code blocks
+  - Coolify/VPS alternative with Indian VPS provider recommendations
+- Created Docker deployment configuration:
+  - Dockerfile (multi-stage: deps → builder → runner with bun:1-slim)
+  - docker-compose.yml (6 services, health checks, resource limits, logging)
+  - 5 mini-service Dockerfiles (vobiz-sip, gemini-ai, ws-bridge, call-simulator, call-orchestrator)
+  - .dockerignore
+  - railway.json
+  - DEPLOY.md (comprehensive deployment guide)
+- Key recommendation: Vercel is NOT suitable (serverless can't run WebSocket/long-running services)
+- Recommended platforms: Railway (quick start, ~$35-50/mo) or Coolify on VPS (long-term, ~₹500-1500/mo)
+- Started dev server, verified no new lint errors from deployment files
+- Updated page.tsx to show DeploymentGuide component
+
+Stage Summary:
+- 11 new files created (1 component + 7 Dockerfiles + docker-compose.yml + .dockerignore + railway.json + DEPLOY.md)
+- Deployment architecture analysis complete with clear recommendation
+- All Docker configs production-ready with health checks, non-root users, resource limits
+- ESLint: 0 new errors (4 pre-existing in serve-static.js)

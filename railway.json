@@ -1,0 +1,14 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": "DOCKERFILE",
+  "deploy": {
+    "startCommand": "bun server.js",
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 5,
+    "healthcheckPath": "/api/route",
+    "healthcheckTimeout": 100,
+    "healthcheckInterval": 30,
+    "memory": 512,
+    "cpu": 1
+  }
+}

@@ -1,0 +1,77 @@
+# ============================================================
+# VoiceAI SaaS - Docker Ignore
+# ============================================================
+
+# Dependencies
+node_modules
+mini-services/*/node_modules
+
+# Build output
+.next
+out
+dist
+build
+
+# Database
+db/
+*.db
+*.db-journal
+
+# Environment files (NEVER ship secrets)
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# IDE / Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.md
+!prisma/*.md
+download/
+upload/
+qa-screenshots/
+agent-ctx/
+examples/
+preview-check.png
+worklog*.md
+keepalive.sh
+serve-static.js
+start-dev.sh
+create_workflows.py
+supabase/
+admin-auth.json
+vobiz-docs-*.json
+n8n-workflows-result.json
+
+# Temp files
+tmp/
+temp/
