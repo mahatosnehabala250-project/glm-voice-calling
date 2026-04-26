@@ -7,6 +7,10 @@ FROM oven/bun:1
 
 WORKDIR /app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy dependency manifests for layer caching
 COPY package.json ./
 # No bun.lock — service has zero dependencies (uses only Bun built-ins)

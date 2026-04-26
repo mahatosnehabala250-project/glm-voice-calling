@@ -36,6 +36,10 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 
+# Install curl for health checks (slim image doesn't include it)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
 RUN groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 bunuser

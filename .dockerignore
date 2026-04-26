@@ -1,37 +1,33 @@
 # ============================================================
 # VoiceAI SaaS - Docker Ignore
 # ============================================================
+# These files won't be copied into Docker images
+# This makes builds faster and images smaller
+# ============================================================
 
 # Dependencies
 node_modules
-mini-services/*/node_modules
+.pnp
+.pnp.js
 
-# Build output
+# Build outputs
 .next
 out
 dist
 build
 
-# Database
-db/
-*.db
-*.db-journal
-
-# Environment files (NEVER ship secrets)
+# Environment files (security!)
 .env
 .env.local
-.env.production
-.env.staging
-.env.development
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
-
-# Git
-.git
-.gitignore
+# Database
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
 
 # IDE / Editor
 .vscode
@@ -43,35 +39,67 @@ docker-compose.yml
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Logs
-*.log
-npm-debug.log*
-bun-debug.log*
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
 
-# Testing
-coverage
-.nyc_output
+# Git
+.git
+.gitignore
 
-# Misc
+# Documentation (not needed in image)
 *.md
-!prisma/*.md
+LICENSE
+COOLIFY-SETUP.md
+HOSTINGER-SETUP.md
+DEPLOY.md
+
+# Screenshots & uploads
+qa-screenshots/
 download/
 upload/
-qa-screenshots/
 agent-ctx/
-examples/
-preview-check.png
-worklog*.md
+
+# Misc
+*.log
+*.pid
+*.seed
+*.csv
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Testing
+coverage/
+
+# Prisma (generated client rebuilt inside Docker)
+prisma/migrations/
+
+# Mini-services (each has its own Dockerfile)
+mini-services/
+
+# Dev scripts
+deploy.sh
+setup-hostinger.sh
+start-dev.sh
 keepalive.sh
 serve-static.js
-start-dev.sh
 create_workflows.py
-supabase/
-admin-auth.json
-vobiz-docs-*.json
-n8n-workflows-result.json
 
-# Temp files
-tmp/
-temp/
+# Config files not needed in container
+tsconfig.json
+tailwind.config.ts
+postcss.config.mjs
+eslint.config.mjs
+components.json
+
+# Vobiz docs
+vobiz-docs*.json
+
+# Railway / other platform configs
+railway.json
+admin-auth.json
