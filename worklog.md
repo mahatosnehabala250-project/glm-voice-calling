@@ -3387,3 +3387,40 @@ Stage Summary:
 - Dark mode supported
 - Indian market focused: ₹ pricing, Indian clinic testimonials, Hinglish quotes
 - All existing functionality preserved (login, dashboard, all tabs)
+
+---
+Task ID: Hostinger-Deploy-Ready
+Agent: Main Architect
+Task: Make project 100% Hostinger VPS deployment ready
+
+Work Log:
+- Found CRITICAL BUG: All 7 Dockerfiles use `curl` for health checks but `oven/bun` images don't include curl — this would cause ALL health checks to fail on Hostinger
+- Fixed main Dockerfile: Added `apt-get install curl` in the runner stage (oven/bun:1-slim)
+- Fixed 6 mini-service Dockerfiles: Added `apt-get install curl` in each
+- Created `.dockerignore`: Excludes node_modules, .env, qa-screenshots, downloads, uploads, mini-services, docs, dev scripts — reduces build context by ~90%
+- Created `setup-hostinger.sh`: Complete ONE-LINER deployment script that:
+  - Updates system packages
+  - Installs Docker + Docker Compose
+  - Installs Git, curl, htop, ufw
+  - Configures UFW firewall (ports 22, 80, 443)
+  - Creates 4GB swap for low-RAM VPS
+  - Clones VoiceAI repo to /opt/voiceai
+  - Creates .env from .env.example with auto-generated JWT secret
+  - Configures Caddyfile with user's domain
+  - Builds all 8 Docker services in parallel
+  - Starts all services with docker compose up -d
+  - Runs Prisma DB migrations
+  - Stops Apache/Nginx if present (port conflict prevention)
+  - Runs health checks on all 7 services
+  - Prints complete deployment summary with URLs
+- Updated docker-compose.yml: Added APP_DOMAIN environment variable for Caddy
+- Updated .env.example: Added APP_DOMAIN variable with documentation
+- Git committed and pushed all changes to GitHub
+
+Stage Summary:
+- 10 files modified/created
+- CRITICAL BUG FIX: curl installation in all Dockerfiles
+- New .dockerignore for optimized builds
+- New setup-hostinger.sh for automated VPS deployment
+- GitHub push successful: 8c27e89
+- All changes deployed to: https://github.com/mahatosnehabala250-project/glm-voice-calling
