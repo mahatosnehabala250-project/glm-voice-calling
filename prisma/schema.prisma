@@ -94,6 +94,8 @@ model Clinic {
   appointments   Appointment[]
   notifications  Notification[]
   agentConfig    AgentConfig?
+  campaigns       Campaign[]
+  contactMemories ContactMemory[]
 
   @@index([status])
   @@index([city])
@@ -307,4 +309,73 @@ model AnalyticsSnapshot {
   @@index([metricType])
   @@index([metricDate])
   @@index([clinicId])
+}
+
+// Campaign management for mass outbound calling
+model Campaign {
+  id              String   @id @default(cuid())
+  clinicId        String
+
+  name            String
+  status          String   @default("draft") // "draft", "active", "running", "paused", "completed", "failed"
+
+  // Contacts
+  contactsJson    String   @default("[]") // JSON array of {name, phone, notes}
+  totalContacts   Int      @default(0)
+
+  // Schedule
+  scheduleType    String   @default("once") // "once", "daily", "weekdays", "custom"
+  scheduleTime    String   @default("09:00") // HH:MM
+  scheduleDays    String?  // JSON array of weekday names for custom: ["Mon","Wed","Fri"]
+
+  // Execution config
+  callDelaySeconds Int     @default(3) // delay between calls
+  maxRetries      Int      @default(2)
+  agentProfileId  String?  // Which agent profile to use for this campaign
+
+  // Custom prompt override
+  systemPrompt    String?
+
+  // Stats
+  totalDispatched Int      @default(0)
+  totalCompleted  Int      @default(0)
+  totalFailed     Int      @default(0)
+  totalBooked     Int      @default(0)
+  totalDuration   Int      @default(0) // total seconds
+
+  // Tracking
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([status])
+}
+
+// AI-extracted memory about each patient across calls
+model ContactMemory {
+  id              String   @id @default(cuid())
+  clinicId        String
+  phoneNumber     String   // patient phone number
+  
+  // Memory content
+  insight         String   // The fact/insight (max 1000 chars)
+  category        String   @default("general") // "preference", "medical", "objection", "callback", "general"
+  confidence      Float    @default(0.9) // AI confidence score 0-1
+  
+  // Source tracking
+  sourceCallId    String?  // Which call this was extracted from
+  extractedBy     String   @default("ai") // "ai", "manual"
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@unique([clinicId, phoneNumber, insight])
+  @@index([clinicId])
+  @@index([phoneNumber])
 }

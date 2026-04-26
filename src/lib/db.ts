@@ -798,6 +798,8 @@ class SupabaseModel {
       agentConfigs: 'agent_configs',
       analyticsSnapshot: 'analytics_snapshots',
       analyticsSnapshots: 'analytics_snapshots',
+      contactMemory: 'contact_memories',
+      contactMemories: 'contact_memories',
     };
     return map[relation] || toSnakeCase(relation) + 's';
   }
@@ -816,6 +818,7 @@ function createSupabaseDb() {
     notification: new SupabaseModel('notifications'),
     agentConfig: new SupabaseModel('agent_configs'),
     analyticsSnapshot: new SupabaseModel('analytics_snapshots'),
+    contactMemory: new SupabaseModel('contact_memories'),
   };
 }
 

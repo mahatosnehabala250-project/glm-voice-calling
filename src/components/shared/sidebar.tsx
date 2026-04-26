@@ -6,7 +6,7 @@ import {
   LayoutDashboard as ClientDash, Calendar, Phone, Settings, Users,
   Bot, LogOut, X, ChevronLeft, CalendarDays, MessageSquare, Plug, Sparkles,
   Bell, Stethoscope, FileBarChart, MessageCircle, BookOpen, Activity, PhoneForwarded,
-  Headphones, GitBranch
+  Headphones, GitBranch, Terminal, Key, FileText, Megaphone
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
@@ -111,12 +111,14 @@ const clientSections: NavSection[] = [
       { id: 'appointments', label: 'Appointments', icon: Calendar },
       { id: 'schedule', label: 'Schedule', icon: CalendarDays },
       { id: 'calls', label: 'Call Logs', icon: Phone },
+      { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
     ],
   },
   {
     title: 'AGENT',
     items: [
       { id: 'agent-studio', label: 'Agent Studio', icon: Sparkles },
+      { id: 'prompts', label: 'Prompt Library', icon: FileText },
     ],
   },
   {
@@ -124,12 +126,15 @@ const clientSections: NavSection[] = [
     items: [
       { id: 'analytics', label: 'Analytics', icon: BarChart3 },
       { id: 'team', label: 'Team', icon: Users },
+      { id: 'contact-memory', label: 'Contact Memory', icon: Brain },
+      { id: 'live-logs', label: 'Live Logs', icon: Terminal },
     ],
   },
   {
     title: 'SETTINGS',
     items: [
       { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'byok', label: 'API Keys (BYOK)', icon: Key },
       { id: 'doctor-portal', label: 'Doctor Portal', icon: Stethoscope },
       { id: 'call-setup', label: 'Call Setup', icon: PhoneCall },
       { id: 'call-flow', label: 'Call Flow', icon: GitBranch },
@@ -377,7 +382,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </button>
             {/* Version indicator */}
             <span className="absolute bottom-1 right-1 text-[9px] font-medium text-slate-300 dark:text-slate-700 select-none">
-              v1.2.0
+              v1.3.0
             </span>
           </div>
         </div>
