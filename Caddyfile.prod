@@ -1,0 +1,76 @@
+# ============================================================
+# VoiceAI SaaS - Production Caddy Configuration
+# ============================================================
+# Copy this to Caddyfile before deploying to VPS
+# Replace voiceai.yourdomain.com with your actual domain
+# ============================================================
+
+# ─── Main Application (Next.js) ───
+{$APP_DOMAIN:voiceai.yourdomain.com} {
+    # Reverse proxy to Next.js app
+    reverse_proxy voiceai-app:3000 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+# ─── n8n Workflow Automation ───
+n8n.{$APP_DOMAIN:voiceai.yourdomain.com} {
+    reverse_proxy n8n:5678 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+# ─── Vobiz SIP Webhook Endpoint ───
+sip.{$APP_DOMAIN:voiceai.yourdomain.com} {
+    reverse_proxy vobiz-sip:3031 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+# ─── Call Orchestrator Webhook ───
+orchestrator.{$APP_DOMAIN:voiceai.yourdomain.com} {
+    reverse_proxy call-orchestrator:3035 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+# ─── WebSocket Bridge ───
+ws.{$APP_DOMAIN:voiceai.yourdomain.com} {
+    reverse_proxy ws-bridge:3033 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+        header_up Connection {>Connection}
+        header_up Upgrade {>Upgrade}
+    }
+}
+
+# ─── Call Simulator (dev/demo only) ───
+simulator.{$APP_DOMAIN:voiceai.yourdomain.com} {
+    reverse_proxy call-simulator:3004 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+        header_up Connection {>Connection}
+        header_up Upgrade {>Upgrade}
+    }
+}
+
+# ─── Gemini AI Service (internal only, not recommended to expose) ───
+# ai.{$APP_DOMAIN:voiceai.yourdomain.com} {
+#     reverse_proxy gemini-ai:3032
+# }

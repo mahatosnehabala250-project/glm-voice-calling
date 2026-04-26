@@ -1,10 +1,8 @@
 # ============================================================
-# VoiceAI SaaS - Full Stack Docker Compose Deployment
+# VoiceAI SaaS - Coolify VPS Deployment (Docker Compose)
 # ============================================================
-# Usage:
-#   cp .env.example .env  # Then edit .env with your credentials
-#   docker compose up -d
-#   docker compose logs -f  # View logs
+# Optimized for Coolify self-hosted platform deployment
+# Usage: Deploy via Coolify "Docker Compose" service type
 # ============================================================
 
 services:
@@ -25,7 +23,6 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL:-file:/app/db/custom.db}
     volumes:
-      # Persist the SQLite database (local dev only; use Supabase for production)
       - app-db:/app/db
     networks:
       - voiceai-network
@@ -38,7 +35,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
           cpus: "1.0"
         reservations:
           memory: 256M
@@ -48,6 +45,9 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=voiceai-app"
 
   # ────────────────────────────────────────────────────
   # Vobiz SIP Integration Service
@@ -83,6 +83,9 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=vobiz-sip"
 
   # ────────────────────────────────────────────────────
   # Gemini AI Integration Service
@@ -118,6 +121,9 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=gemini-ai"
 
   # ────────────────────────────────────────────────────
   # WebSocket Bridge Service
@@ -153,9 +159,12 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=ws-bridge"
 
   # ────────────────────────────────────────────────────
-  # Call Simulator Service
+  # Call Simulator Service (for testing/demo)
   # ────────────────────────────────────────────────────
   call-simulator:
     build:
@@ -188,9 +197,13 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=call-simulator"
 
   # ────────────────────────────────────────────────────
   # Call Orchestrator Service
+  # Uses Docker service names for inter-service communication
   # ────────────────────────────────────────────────────
   call-orchestrator:
     build:
@@ -202,6 +215,12 @@ services:
       - "3035:3035"
     env_file:
       - .env
+    environment:
+      # Docker network: use service names instead of localhost
+      - VOBIZ_SERVICE_URL=http://vobiz-sip:3031
+      - GEMINI_SERVICE_URL=http://gemini-ai:3032
+      - WS_BRIDGE_SERVICE_URL=http://ws-bridge:3033
+      - MAIN_APP_URL=http://voiceai-app:3000
     depends_on:
       voiceai-app:
         condition: service_healthy
@@ -232,12 +251,108 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=call-orchestrator"
+
+  # ────────────────────────────────────────────────────
+  # n8n Workflow Automation
+  # ────────────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: voiceai-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USERNAME:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-voiceai2024}
+      - WEBHOOK_URL=${N8N_WEBHOOK_BASE:-http://localhost:5678}
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_FUNCTION_ALLOW_EXTERNAL=crypto,axios
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+      - GENERIC_TIMEZONE=Asia/Kolkata
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - voiceai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "30m"
+        max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=n8n"
+
+  # ────────────────────────────────────────────────────
+  # Caddy Reverse Proxy (Auto HTTPS)
+  # ────────────────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: voiceai-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - voiceai-network
+    depends_on:
+      - voiceai-app
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+        reservations:
+          memory: 64M
+          cpus: "0.05"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=caddy"
 
 # ============================================================
 # Volumes
 # ============================================================
 volumes:
   app-db:
+    driver: local
+  n8n-data:
+    driver: local
+  caddy-data:
+    driver: local
+  caddy-config:
     driver: local
 
 # ============================================================

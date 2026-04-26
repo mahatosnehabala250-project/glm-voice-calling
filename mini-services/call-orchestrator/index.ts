@@ -31,11 +31,11 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const N8N_BASE = process.env.N8N_WEBHOOK_BASE || 'https://n8n.srv1347095.hstgr.cloud';
 
-// Downstream service URLs (server-side direct calls)
-const VOBIZ_SERVICE = `http://localhost:3031`;
-const GEMINI_SERVICE = `http://localhost:3032`;
-const WS_BRIDGE_SERVICE = `http://localhost:3033`;
-const MAIN_APP = `http://localhost:3000`;
+// Downstream service URLs (supports Docker Compose networking via env vars)
+const VOBIZ_SERVICE = process.env.VOBIZ_SERVICE_URL || 'http://localhost:3031';
+const GEMINI_SERVICE = process.env.GEMINI_SERVICE_URL || 'http://localhost:3032';
+const WS_BRIDGE_SERVICE = process.env.WS_BRIDGE_SERVICE_URL || 'http://localhost:3033';
+const MAIN_APP = process.env.MAIN_APP_URL || 'http://localhost:3000';
 
 // ============================================================
 // TYPES

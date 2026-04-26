@@ -3236,3 +3236,59 @@ Stage Summary:
 - Deployment architecture analysis complete with clear recommendation
 - All Docker configs production-ready with health checks, non-root users, resource limits
 - ESLint: 0 new errors (4 pre-existing in serve-static.js)
+
+---
+Task ID: coolify-deploy
+Agent: Main Architect
+Task: Prepare Coolify VPS deployment configuration
+
+Work Log:
+- Analyzed existing Dockerfile, docker-compose.yml, and all mini-service Dockerfiles
+- Updated docker-compose.yml for Coolify deployment:
+  - Added n8n service (n8nio/n8n:latest) on port 5678 with persistent volume
+  - Added Caddy reverse proxy service on ports 80/443 with auto-HTTPS
+  - Added proper Docker network labels (coolify.managed=true)
+  - Configured call-orchestrator with Docker service URLs via environment variables
+  - Increased memory limits (voiceai-app: 1G, n8n: 512M)
+  - Added n8n-data, caddy-data, caddy-config volumes
+- Updated call-orchestrator/index.ts to use env vars for service URLs:
+  - VOBIZ_SERVICE_URL (default: http://localhost:3031)
+  - GEMINI_SERVICE_URL (default: http://localhost:3032)
+  - WS_BRIDGE_SERVICE_URL (default: http://localhost:3033)
+  - MAIN_APP_URL (default: http://localhost:3000)
+- Created Caddyfile.prod with production reverse proxy config:
+  - Main app on voiceai.yourdomain.com
+  - n8n on n8n.voiceai.yourdomain.com
+  - Vobiz SIP on sip.voiceai.yourdomain.com
+  - Call Orchestrator on orchestrator.voiceai.yourdomain.com
+  - WebSocket Bridge on ws.voiceai.yourdomain.com
+  - Call Simulator on simulator.voiceai.yourdomain.com
+  - Supports {$APP_DOMAIN} environment variable for easy domain configuration
+- Created COOLIFY-SETUP.md - comprehensive deployment guide in Hinglish+English:
+  - PART 1: VPS Setup & Coolify Installation (6 steps)
+  - PART 2: DNS Configuration (subdomain records)
+  - PART 3: Deploy VoiceAI on Coolify (7 steps)
+  - PART 4: Post-Deployment (DB migrations, n8n setup, Vobiz config)
+  - PART 5: Common Issues & Troubleshooting
+  - Architecture diagram, quick reference commands, cost estimate, security checklist
+- Created deploy.sh - automated deployment script:
+  - Checks prerequisites (Docker, Git)
+  - Validates .env configuration
+  - Configures Caddyfile with user's domain
+  - Pulls latest code
+  - Builds Docker images
+  - Starts all services
+  - Runs DB migrations
+  - Health checks all services
+- Updated .env.example with new variables:
+  - n8n: N8N_USERNAME, N8N_PASSWORD, N8N_WEBHOOK_BASE
+  - n8n Webhook URLs: N8N_WEBHOOK_BOOKING, N8N_WEBHOOK_ESCALATION, etc.
+  - Docker service URLs: VOBIZ_SERVICE_URL, GEMINI_SERVICE_URL, etc.
+
+Stage Summary:
+- Complete Coolify VPS deployment configuration ready
+- 8 services configured: voiceai-app, vobiz-sip, gemini-ai, ws-bridge, call-simulator, call-orchestrator, n8n, caddy
+- Auto-HTTPS via Caddy with Let's Encrypt
+- Docker bridge networking with service name resolution
+- Zero-cost deployment (Coolify is free/open-source, VPS only cost)
+- Monthly cost estimate: $6-30/month depending on VPS provider
