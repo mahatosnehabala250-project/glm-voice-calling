@@ -1,9 +1,6 @@
 # ============================================================
 # VoiceAI SaaS - Docker Ignore
 # ============================================================
-# These files won't be copied into Docker images
-# This makes builds faster and images smaller
-# ============================================================
 
 # Dependencies
 node_modules
@@ -50,12 +47,9 @@ Dockerfile
 .git
 .gitignore
 
-# Documentation (not needed in image)
+# Documentation
 *.md
 LICENSE
-COOLIFY-SETUP.md
-HOSTINGER-SETUP.md
-DEPLOY.md
 
 # Screenshots & uploads
 qa-screenshots/
@@ -76,9 +70,6 @@ yarn-error.log*
 # Testing
 coverage/
 
-# Prisma (generated client rebuilt inside Docker)
-prisma/migrations/
-
 # Mini-services (each has its own Dockerfile)
 mini-services/
 
@@ -89,13 +80,6 @@ start-dev.sh
 keepalive.sh
 serve-static.js
 create_workflows.py
-
-# Config files not needed in container
-tsconfig.json
-tailwind.config.ts
-postcss.config.mjs
-eslint.config.mjs
-components.json
 
 # Vobiz docs
 vobiz-docs*.json
