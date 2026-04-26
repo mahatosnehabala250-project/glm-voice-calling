@@ -24,6 +24,123 @@ import SystemHealthWidget from '@/components/shared/system-health-widget';
 import { useAppStore } from '@/stores/app-store';
 import { formatDistanceToNow } from 'date-fns';
 
+// --- System Health Status Widget (colored dots) ---
+const SYSTEM_SERVICES = [
+  { name: 'Gemini API', status: 'active' as const, icon: Brain },
+  { name: 'Vobiz SIP', status: 'active' as const, icon: Phone },
+  { name: 'WebSocket Bridge', status: 'active' as const, icon: Radio },
+  { name: 'n8n Workflows', status: 'active' as const, icon: Workflow },
+  { name: 'Database Cluster', status: 'active' as const, icon: Database },
+  { name: 'Redis Cache', status: 'degraded' as const, icon: Zap },
+];
+
+function SystemHealthStatusWidget() {
+  return (
+    <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Shield className="w-4 h-4 text-emerald-500" />
+          System Health
+          <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+            All Operational
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {SYSTEM_SERVICES.map((svc) => {
+            const Icon = svc.icon;
+            const isOk = svc.status === 'active';
+            return (
+              <motion.div
+                key={svc.name}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className={isOk ? 'w-4 h-4 text-emerald-600 dark:text-emerald-400' : 'w-4 h-4 text-amber-500'} />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{svc.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={isOk ? 'text-xs font-semibold text-emerald-600 dark:text-emerald-400' : 'text-xs font-semibold text-amber-600 dark:text-amber-400'}>
+                    {isOk ? 'Active' : 'Degraded'}
+                  </span>
+                  <span className="relative flex h-2.5 w-2.5">
+                    {isOk && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />
+                    )}
+                    <span className={cn(
+                      'relative inline-flex rounded-full h-2.5 w-2.5',
+                      isOk ? 'bg-emerald-500' : 'bg-amber-500'
+                    )} />
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+        <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500">
+          Last checked: just now • Auto-refreshes every 30s
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- Recent Activity Feed (5 mock items) ---
+const MOCK_RECENT_ACTIVITIES = [
+  { id: 'ra-1', icon: PhoneIncoming, color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-100 dark:bg-teal-900/30', label: 'Incoming Call', description: 'New call received at Sharma Dental Clinic — AI answered', time: '2 minutes ago' },
+  { id: 'ra-2', icon: CalendarPlus, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', label: 'Appointment Booked', description: 'Priya Sharma booked with Dr. Rajesh for Friday 10:30 AM', time: '8 minutes ago' },
+  { id: 'ra-3', icon: UserCheck, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', label: 'New Clinic Registered', description: 'SmileCare Clinic, Mumbai registered on Pro plan', time: '15 minutes ago' },
+  { id: 'ra-4', icon: MessageCircle, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', label: 'WhatsApp Sent', description: 'Appointment reminder sent to +91-98765-43210', time: '22 minutes ago' },
+  { id: 'ra-5', icon: Zap, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/30', label: 'System Alert', description: 'AI model refresh completed with latest clinic data', time: '35 minutes ago' },
+];
+
+function RecentActivityFeed() {
+  return (
+    <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Timer className="w-4 h-4 text-amber-500" />
+          Recent Activity
+        </CardTitle>
+        <Badge variant="outline" className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700">
+          Last 30 min
+        </Badge>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2.5">
+          {MOCK_RECENT_ACTIVITIES.map((activity, i) => {
+            const Icon = activity.icon;
+            return (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.06 }}
+                className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', activity.bg)}>
+                  <Icon className={cn('w-4 h-4', activity.color)} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-800 dark:text-white">{activity.label}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{activity.description}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{activity.time}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface MetricsData {
   totalClinics: number;
   activeClinics: number;
@@ -678,10 +795,10 @@ export default function AdminOverview() {
   ];
 
   const colorMap: Record<string, { bg: string; text: string; iconBg: string; topLine: string; gradient: string }> = {
-    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', iconBg: 'bg-emerald-100 dark:bg-emerald-900/40', topLine: 'bg-emerald-500', gradient: 'from-emerald-500/20 to-emerald-600/5 dark:from-emerald-400/10 dark:to-transparent' },
-    teal: { bg: 'bg-teal-50 dark:bg-teal-900/20', text: 'text-teal-700 dark:text-teal-400', iconBg: 'bg-teal-100 dark:bg-teal-900/40', topLine: 'bg-teal-500', gradient: 'from-teal-500/20 to-teal-600/5 dark:from-teal-400/10 dark:to-transparent' },
-    amber: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', iconBg: 'bg-amber-100 dark:bg-amber-900/40', topLine: 'bg-amber-500', gradient: 'from-amber-500/20 to-amber-600/5 dark:from-amber-400/10 dark:to-transparent' },
-    rose: { bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-700 dark:text-rose-400', iconBg: 'bg-rose-100 dark:bg-rose-900/40', topLine: 'bg-rose-500', gradient: 'from-rose-500/20 to-rose-600/5 dark:from-rose-400/10 dark:to-transparent' },
+    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', iconBg: 'bg-emerald-100 dark:bg-emerald-900/40', topLine: 'bg-emerald-500', gradient: 'from-emerald-500/10 to-teal-500/5 dark:from-emerald-500/5 dark:to-transparent' },
+    teal: { bg: 'bg-teal-50 dark:bg-teal-900/20', text: 'text-teal-700 dark:text-teal-400', iconBg: 'bg-teal-100 dark:bg-teal-900/40', topLine: 'bg-teal-500', gradient: 'from-teal-500/10 to-cyan-500/5 dark:from-teal-500/5 dark:to-transparent' },
+    amber: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', iconBg: 'bg-amber-100 dark:bg-amber-900/40', topLine: 'bg-amber-500', gradient: 'from-amber-500/10 to-orange-500/5 dark:from-amber-500/5 dark:to-transparent' },
+    rose: { bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-700 dark:text-rose-400', iconBg: 'bg-rose-100 dark:bg-rose-900/40', topLine: 'bg-rose-500', gradient: 'from-rose-500/10 to-pink-500/5 dark:from-rose-500/5 dark:to-transparent' },
   };
 
   const aiInsights = [
@@ -700,11 +817,11 @@ export default function AdminOverview() {
           const Icon = stat.icon;
           return (
             <motion.div key={i} variants={item}>
-              <Card className="border-slate-200 dark:border-slate-800 stat-card-hover overflow-hidden relative hover:scale-[1.02] transition-transform duration-200">
+              <Card className="border-slate-200 dark:border-slate-800 stat-card-hover overflow-hidden relative hover:scale-[1.02] hover:shadow-lg transition-all duration-200">
                 {/* Thin colored top line */}
                 <div className={cn('absolute top-0 left-0 right-0 h-0.5', colors.topLine)} />
-                {/* Gradient overlay bottom-right */}
-                <div className={cn('absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-tl rounded-tl-full opacity-50 pointer-events-none', colors.gradient)} />
+                {/* Gradient overlay background */}
+                <div className={cn('absolute inset-0 bg-gradient-to-br opacity-40 pointer-events-none', colors.gradient)} />
                 <CardContent className="p-4 lg:p-6 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -802,10 +919,20 @@ export default function AdminOverview() {
         </div>
       </motion.div>
 
+      {/* System Health Status + Recent Activity (side by side) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <motion.div variants={item}>
+          <SystemHealthStatusWidget />
+        </motion.div>
+        <motion.div variants={item}>
+          <RecentActivityFeed />
+        </motion.div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* System Health */}
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800 h-full">
+          <Card className="border-slate-200 dark:border-slate-800 h-full hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-500" />
@@ -911,7 +1038,7 @@ export default function AdminOverview() {
 
         {/* Call Status Pie */}
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800 h-full">
+          <Card className="border-slate-200 dark:border-slate-800 h-full hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Phone className="w-4 h-4 text-teal-500" />
@@ -975,7 +1102,7 @@ export default function AdminOverview() {
 
         {/* Call Volume Trend - AreaChart with gradient */}
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800 h-full">
+          <Card className="border-slate-200 dark:border-slate-800 h-full hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-amber-500" />
@@ -1037,7 +1164,7 @@ export default function AdminOverview() {
 
       {/* Geographic Distribution */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <MapPin className="w-4 h-4 text-teal-500" />
@@ -1082,7 +1209,7 @@ export default function AdminOverview() {
 
       {/* Recent Alerts */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Bell className="w-4 h-4 text-amber-500" />
@@ -1166,7 +1293,7 @@ export default function AdminOverview() {
 
       {/* Recent Clinic Activity */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Recent Clinic Activity</CardTitle>
           </CardHeader>
@@ -1206,7 +1333,7 @@ export default function AdminOverview() {
       {/* Top Performing Clinics Leaderboard */}
       {topClinics.length > 0 && (
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
@@ -154,16 +154,37 @@ function ClientDashboard() {
 
 // ─── Main App ──────────────────────────────────────────────────────────────────
 
+/**
+ * Determines whether the current auth state represents a valid, authenticated session.
+ * Returns false if `isAuthenticated` is stale (true in localStorage but user is null/malformed).
+ */
+function isValidAuthState(isAuthenticated: boolean, user: ReturnType<typeof useAuthStore.getState>['user']): boolean {
+  return Boolean(
+    isAuthenticated &&
+    user &&
+    user.id &&
+    user.email &&
+    user.name &&
+    user.role
+  );
+}
+
 export default function Home() {
   const { user, isAuthenticated } = useAuthStore();
   const { sidebarOpen, setSidebarOpen } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
-  const [showLanding, setShowLanding] = useState(true);
+
+  // Tracks whether the user manually navigated from landing → login.
+  // Resets to false once the user successfully authenticates.
+  const [navigatedToLogin, setNavigatedToLogin] = useState(false);
 
   useEffect(() => {
     const timer = requestAnimationFrame(() => setHydrated(true));
     return () => cancelAnimationFrame(timer);
   }, []);
+
+  // Clear login navigation flag once user successfully logs in
+  const authenticated = useMemo(() => isValidAuthState(isAuthenticated, user), [isAuthenticated, user]);
 
   if (!hydrated) {
     return (
@@ -175,25 +196,51 @@ export default function Home() {
     );
   }
 
-  // Show landing page
-  if (showLanding && !isAuthenticated) {
+  const handleGetStarted = () => {
+    setNavigatedToLogin(true);
+  };
+
+  const handleLogin = () => {
+    // User has logged in successfully — clear the login navigation flag
+    // so that if they log out they'll see the landing page again.
+    setNavigatedToLogin(false);
+  };
+
+  const handleBackToLanding = () => {
+    setNavigatedToLogin(false);
+  };
+
+  // ── Dashboard: only if authenticated with a valid user object ──
+  if (authenticated) {
+    const isAdmin = user.role === 'admin';
+
     return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="landing"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <LandingPage onGetStarted={() => setShowLanding(false)} />
-        </motion.div>
-      </AnimatePresence>
+      <div className="min-h-screen flex bg-slate-50/50 dark:bg-slate-950">
+        {/* Sidebar */}
+        <Sidebar collapsed={!sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+        {/* Main Content */}
+        <div className={cn(
+          'flex-1 flex flex-col min-h-screen transition-all duration-300',
+          sidebarOpen ? 'lg:ml-0' : 'lg:ml-0',
+        )}>
+          {/* Header */}
+          <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+
+          {/* Page Content */}
+          <main className="flex-1 p-4 lg:p-6 max-w-7xl w-full mx-auto">
+            {isAdmin ? <AdminDashboard /> : <ClientDashboard />}
+          </main>
+
+          {/* Footer */}
+          <Footer />
+        </div>
+      </div>
     );
   }
 
-  // Show login page
-  if (!isAuthenticated || !user) {
+  // ── Login Page: only when user explicitly navigated to it from the landing page ──
+  if (navigatedToLogin) {
     return (
       <AnimatePresence mode="wait">
         <motion.div
@@ -203,35 +250,24 @@ export default function Home() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <LoginPage onLogin={() => {}} />
+          <LoginPage onLogin={handleLogin} onBack={handleBackToLanding} />
         </motion.div>
       </AnimatePresence>
     );
   }
 
-  const isAdmin = user.role === 'admin';
-
+  // ── Landing Page: always show when not authenticated (and not in login flow) ──
   return (
-    <div className="min-h-screen flex bg-slate-50/50 dark:bg-slate-950">
-      {/* Sidebar */}
-      <Sidebar collapsed={!sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-
-      {/* Main Content */}
-      <div className={cn(
-        'flex-1 flex flex-col min-h-screen transition-all duration-300',
-        sidebarOpen ? 'lg:ml-0' : 'lg:ml-0',
-      )}>
-        {/* Header */}
-        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
-        {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 max-w-7xl w-full mx-auto">
-          {isAdmin ? <AdminDashboard /> : <ClientDashboard />}
-        </main>
-
-        {/* Footer */}
-        <Footer />
-      </div>
-    </div>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="landing"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <LandingPage onGetStarted={handleGetStarted} />
+      </motion.div>
+    </AnimatePresence>
   );
 }

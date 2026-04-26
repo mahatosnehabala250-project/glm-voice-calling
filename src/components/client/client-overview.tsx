@@ -363,6 +363,71 @@ export default function ClientOverview() {
         <QuickActionsPanel />
       </motion.div>
 
+      {/* Call Statistics Mini Chart (CSS bars) */}
+      <motion.div variants={item}>
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              Call Statistics (This Week)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-2 h-32">
+              {[
+                { day: 'Mon', answered: 18, missed: 3 },
+                { day: 'Tue', answered: 22, missed: 5 },
+                { day: 'Wed', answered: 15, missed: 2 },
+                { day: 'Thu', answered: 28, missed: 4 },
+                { day: 'Fri', answered: 20, missed: 6 },
+                { day: 'Sat', answered: 12, missed: 1 },
+                { day: 'Sun', answered: 8, missed: 2 },
+              ].map((d) => {
+                const max = 30;
+                const answeredH = (d.answered / max) * 100;
+                const missedH = (d.missed / max) * 100;
+                return (
+                  <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full flex flex-col items-center gap-0.5 h-24">
+                      <div className="w-full flex flex-col justify-end items-center gap-[2px] h-full">
+                        <div className="w-full flex flex-col items-center gap-[2px]">
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: `${answeredH}%` }}
+                            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+                            className="w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-emerald-500 to-teal-400 min-h-[4px]"
+                          />
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: `${missedH}%` }}
+                            transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+                            className="w-full max-w-[28px] rounded-b-sm bg-rose-300 dark:bg-rose-500/60 min-h-[2px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{d.day}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-emerald-500 to-teal-400" />
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">Answered</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-rose-300 dark:bg-rose-500/60" />
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">Missed</span>
+              </div>
+              <span className="ml-auto text-[11px] text-slate-400 dark:text-slate-500">
+                Total: <span className="font-bold text-slate-700 dark:text-slate-300">123 calls</span>
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Try AI Demo Button */}
       <motion.div variants={item}>
         <motion.button
@@ -397,8 +462,9 @@ export default function ClientOverview() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
-              <Card className="border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow cursor-default card-shine">
-                <CardContent className="p-4 lg:p-6">
+              <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200 cursor-default card-shine overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-transparent dark:from-slate-800/30 dark:to-transparent pointer-events-none" />
+                <CardContent className="p-4 lg:p-6 relative">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.label}</p>
@@ -481,7 +547,7 @@ export default function ClientOverview() {
         </motion.div>
 
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800">
+          <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-500" />
@@ -530,7 +596,7 @@ export default function ClientOverview() {
 
       {/* Recent Activity Timeline */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Bell className="w-4 h-4 text-amber-500" />
@@ -575,7 +641,7 @@ export default function ClientOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Appointments */}
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800 h-full">
+          <Card className="border-slate-200 dark:border-slate-800 h-full hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <CalendarCheck className="w-4 h-4 text-teal-500" />
@@ -622,7 +688,7 @@ export default function ClientOverview() {
 
         {/* Recent Calls */}
         <motion.div variants={item}>
-          <Card className="border-slate-200 dark:border-slate-800 h-full">
+          <Card className="border-slate-200 dark:border-slate-800 h-full hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-500" />
@@ -686,7 +752,7 @@ export default function ClientOverview() {
 
       {/* AI Agent Performance Card */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Bot className="w-4 h-4 text-teal-500" />
@@ -728,7 +794,7 @@ export default function ClientOverview() {
 
       {/* Weekly Chart */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800 chart-container-enter">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200 chart-container-enter">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-amber-500" />
@@ -763,7 +829,7 @@ export default function ClientOverview() {
 
       {/* Sentiment Trend Widget */}
       <motion.div variants={item}>
-        <Card className="border-slate-200 dark:border-slate-800">
+        <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-500" />

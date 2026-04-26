@@ -970,139 +970,151 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </Section>
 
       {/* ─── Footer ─────────────────────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-white" />
+      <footer className="relative z-10 footer-glow">
+        <div className="border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-slate-50/90 to-white dark:from-slate-900/90 dark:to-slate-950 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+              {/* Brand & Social */}
+              <div className="sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 neon-emerald">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    Voice<span className="text-emerald-600 dark:text-emerald-400">AI</span>
+                  </span>
                 </div>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">
-                  Voice<span className="text-emerald-600 dark:text-emerald-400">AI</span>
-                </span>
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                AI-powered receptionist built specifically for Indian healthcare clinics.
-              </p>
-              {/* Social media icons */}
-              <div className="flex items-center gap-3 mb-4">
-                {SOCIAL_ICONS.map(({ icon: SocIcon, label }) => (
-                  <button
-                    key={label}
-                    aria-label={label}
-                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 hover:scale-110"
-                  >
-                    <SocIcon className="w-4 h-4" />
-                  </button>
-                ))}
-              </div>
-              <p className="text-sm text-slate-400 dark:text-slate-500">
-                Made with ❤️ in India
-              </p>
-            </div>
-
-            {/* Product Links */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Product</h4>
-              <ul className="space-y-2.5">
-                {['Features', 'Pricing', 'How It Works', 'Integrations', 'API Docs'].map((link) => (
-                  <li key={link}>
-                    <button
-                      onClick={() => {
-                        const map: Record<string, string> = {
-                          Features: '#features',
-                          Pricing: '#pricing',
-                          'How It Works': '#how-it-works',
-                        };
-                        if (map[link]) scrollToSection(map[link]);
-                      }}
-                      className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 leading-relaxed max-w-xs">
+                  AI-powered voice receptionist built specifically for Indian healthcare clinics. Never miss a patient call again.
+                </p>
+                {/* Social media icons */}
+                <div className="flex items-center gap-2.5">
+                  {SOCIAL_ICONS.map(({ icon: SocIcon, label }) => (
+                    <a
+                      key={label}
+                      href="#"
+                      aria-label={label}
+                      className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 hover:scale-110 hover:shadow-sm"
                     >
-                      {link}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company Links */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Company</h4>
-              <ul className="space-y-2.5">
-                {['About', 'Blog', 'Careers', 'Contact'].map((link) => (
-                  <li key={link}>
-                    <span className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer">
-                      {link}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Legal Links */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Legal</h4>
-              <ul className="space-y-2.5">
-                {['Privacy Policy', 'Terms of Service', 'Data Security', 'HIPAA Compliance'].map((link) => (
-                  <li key={link}>
-                    <span className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer">
-                      {link}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Newsletter Signup */}
-          <div className="mt-8 p-5 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Stay Updated</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Get product updates and healthcare AI tips delivered to your inbox.</p>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubscribe()}
-                className="h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-emerald-400 dark:focus:border-emerald-600"
-              />
-              <Button
-                onClick={handleSubscribe}
-                size="sm"
-                className="h-9 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm flex-shrink-0"
-              >
-                {subscribed ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-            {subscribed && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">Thanks for subscribing! 🎉</p>
-            )}
-          </div>
-
-          {/* Bottom bar */}
-          <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              © {new Date().getFullYear()} VoiceAI. All rights reserved.
-            </p>
-            <div className="flex items-center gap-4">
-              {/* Social icons in bottom bar */}
-              <div className="flex items-center gap-2">
-                {SOCIAL_ICONS.map(({ icon: SocIcon, label }) => (
-                  <button
-                    key={`bottom-${label}`}
-                    aria-label={label}
-                    className="text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors"
-                  >
-                    <SocIcon className="w-3.5 h-3.5" />
-                  </button>
-                ))}
+                      <SocIcon className="w-4 h-4" />
+                    </a>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot" />
-                <span className="text-xs text-slate-400 dark:text-slate-500">All systems operational</span>
+
+              {/* Quick Links */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Quick Links</h4>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: 'Features', href: '#features' },
+                    { label: 'Pricing', href: '#pricing' },
+                    { label: 'FAQ', href: '#faq' },
+                    { label: 'Contact', href: '#' },
+                  ].map((link) => (
+                    <li key={link.label}>
+                      <button
+                        onClick={() => scrollToSection(link.href)}
+                        className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5 group"
+                      >
+                        <span className="w-0 group-hover:w-2 h-px bg-emerald-500 transition-all duration-300" />
+                        {link.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Company Links */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Company</h4>
+                <ul className="space-y-2.5">
+                  {['About Us', 'Blog', 'Careers', 'Partners'].map((link) => (
+                    <li key={link}>
+                      <span className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer inline-flex items-center gap-1.5 group">
+                        <span className="w-0 group-hover:w-2 h-px bg-emerald-500 transition-all duration-300" />
+                        {link}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Legal Links */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Legal</h4>
+                <ul className="space-y-2.5">
+                  {['Privacy Policy', 'Terms of Service', 'Data Security', 'Cookie Policy'].map((link) => (
+                    <li key={link}>
+                      <span className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer inline-flex items-center gap-1.5 group">
+                        <span className="w-0 group-hover:w-2 h-px bg-emerald-500 transition-all duration-300" />
+                        {link}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Newsletter Signup */}
+            <div className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-emerald-50/60 to-teal-50/40 dark:from-emerald-900/15 dark:to-teal-900/10 border border-emerald-100/60 dark:border-emerald-800/25">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Stay Updated</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Get product updates and healthcare AI tips delivered to your inbox.</p>
+                </div>
+                <div className="flex gap-2 sm:w-auto w-full">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubscribe()}
+                    className="h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-emerald-400 dark:focus:border-emerald-600 sm:w-56"
+                  />
+                  <Button
+                    onClick={handleSubscribe}
+                    size="sm"
+                    className="h-9 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm flex-shrink-0"
+                  >
+                    {subscribed ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              {subscribed && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">Thanks for subscribing! 🎉</p>
+              )}
+            </div>
+
+            {/* Bottom bar */}
+            <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  © 2025 VoiceAI. All rights reserved.
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  Made with ❤️ in India
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                {/* Social icons in bottom bar */}
+                <div className="flex items-center gap-2.5">
+                  {SOCIAL_ICONS.map(({ icon: SocIcon, label }) => (
+                    <a
+                      key={`bottom-${label}`}
+                      href="#"
+                      aria-label={label}
+                      className="text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors"
+                    >
+                      <SocIcon className="w-3.5 h-3.5" />
+                    </a>
+                  ))}
+                </div>
+                <span className="text-slate-200 dark:text-slate-700">|</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot" />
+                  <span className="text-xs text-slate-400 dark:text-slate-500">All systems operational</span>
+                </div>
               </div>
             </div>
           </div>

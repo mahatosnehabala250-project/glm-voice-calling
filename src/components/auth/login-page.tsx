@@ -6,7 +6,8 @@ import {
   Phone, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Shield, Bot,
   Stethoscope, HeartPulse, Activity, Pill, Syringe, Heart,
   Building2, PhoneCall, Clock, Quote, ShieldCheck, Cross,
-  Building, MapPin, User, CheckCircle2, ArrowLeft, ChevronRight, Loader2
+  Building, MapPin, User, CheckCircle2, ArrowLeft, ChevronRight, Loader2,
+  Github
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import { toast } from 'sonner';
 
 interface LoginPageProps {
   onLogin: () => void;
+  onBack?: () => void;
 }
 
 const FLOATING_ICONS = [
@@ -379,6 +381,45 @@ function SignInForm({ onLogin }: { onLogin: () => void }) {
           </Button>
         </motion.div>
       </form>
+
+      {/* Social Login Divider */}
+      <div className="relative my-5">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white dark:bg-slate-800 px-3 text-slate-400 dark:text-slate-500">or continue with</span>
+        </div>
+      </div>
+
+      {/* Social Login Buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-10 font-medium text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300"
+          >
+            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Google
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-10 font-medium text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300"
+          >
+            <Github className="w-4 h-4 mr-2" />
+            GitHub
+          </Button>
+        </motion.div>
+      </div>
 
       {/* Security Badge */}
       <motion.div
@@ -797,7 +838,7 @@ function SignUpForm({ onRegister }: { onRegister: () => void }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                Welcome to VoiceAI! 🎉
+                Welcome to VoiceAI!
               </motion.h3>
 
               <motion.p
@@ -835,11 +876,11 @@ function getPasswordStrength(password: string): number {
 }
 
 // ===================== MAIN LOGIN PAGE =====================
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [activeTab, setActiveTab] = useState('signin');
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-stripes">
+    <div className="min-h-screen flex relative overflow-hidden bg-stripes">
       {/* Animated gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 via-teal-50 to-white dark:from-slate-950 dark:via-emerald-950/20 dark:to-slate-900" />
 
@@ -914,327 +955,349 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         })}
       </div>
 
-      {/* Floating medical icons */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {FLOATING_ICONS.map(({ Icon, x, y, size, delay }, i) => (
+      {/* ===== SPLIT LAYOUT ===== */}
+      <div className="w-full flex flex-col lg:flex-row min-h-screen relative z-10">
+
+        {/* Left Panel - Branding/Image (hidden on mobile, shown on lg+) */}
+        <div className="hidden lg:flex lg:flex-1 flex-col items-center justify-center p-12 relative overflow-hidden">
+          {/* Floating medical icons */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {FLOATING_ICONS.map(({ Icon, x, y, size, delay }, i) => (
+              <motion.div
+                key={i}
+                className={cn("absolute", i === 0 && "animate-swing")}
+                style={{ left: x, top: y }}
+                animate={{
+                  y: [0, -18, 0, 12, 0],
+                  rotate: [0, 8, -5, 3, 0],
+                  opacity: [0.15, 0.28, 0.2, 0.3, 0.15],
+                }}
+                transition={{
+                  duration: 8 + i * 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay,
+                }}
+              >
+                <Icon
+                  className="text-emerald-400 dark:text-emerald-300/30"
+                  style={{ width: size, height: size }}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Logo + Branding */}
           <motion.div
-            key={i}
-            className={cn("absolute", i === 0 && "animate-swing")}
-            style={{ left: x, top: y }}
-            animate={{
-              y: [0, -18, 0, 12, 0],
-              rotate: [0, 8, -5, 3, 0],
-              opacity: [0.15, 0.28, 0.2, 0.3, 0.15],
-            }}
-            transition={{
-              duration: 8 + i * 1.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay,
-            }}
+            className="text-center mb-10 relative z-10"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            <Icon
-              className="text-emerald-400 dark:text-emerald-300/30"
-              style={{ width: size, height: size }}
-            />
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="w-full max-w-md px-4 relative z-10">
-        {/* Logo with slow rotation (20s) and breathing glow */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="relative inline-block">
-            {/* Glow effect behind logo with breathing animation */}
-            <motion.div
-              className="absolute inset-0 rounded-2xl bg-emerald-400/50 blur-xl animate-breathe"
-              animate={{
-                opacity: [0.4, 0.7, 0.4],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <div className="relative inline-flex items-center justify-center w-18 h-18 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30 neon-emerald">
-              {/* Bot icon with slow rotation animation (20s cycle) */}
+            <div className="relative inline-block">
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              >
-                <Bot className="w-9 h-9 text-white" />
-              </motion.div>
+                className="absolute inset-0 rounded-2xl bg-emerald-400/50 blur-xl animate-breathe"
+                animate={{
+                  opacity: [0.4, 0.7, 0.4],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30 neon-emerald">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                >
+                  <Bot className="w-10 h-10 text-white" />
+                </motion.div>
+              </div>
             </div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-5 text-gradient-hero">
-            Voice<span className="text-emerald-600 dark:text-emerald-400">AI</span>
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-            AI-powered receptionist for Indian healthcare
-          </p>
-        </motion.div>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white mt-6 text-gradient-hero">
+              Voice<span className="text-emerald-600 dark:text-emerald-400">AI</span>
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 text-base">
+              AI-powered receptionist for Indian healthcare
+            </p>
+          </motion.div>
 
-        {/* Login/Signup Card with animated gradient border */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          <div className="border-gradient">
-            <Card className="border-0 shadow-none bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl card-shine shadow-[inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.05),0_20px_40px_-12px_rgba(0,0,0,0.15)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(0,0,0,0.2),0_20px_40px_-12px_rgba(0,0,0,0.4)]">
-              <CardContent className="p-6">
-                {/* Tab Switcher */}
-                <div className="flex items-center bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1 mb-5">
-                  {[
-                    { key: 'signin', label: 'Sign In' },
-                    { key: 'signup', label: 'Sign Up' },
-                  ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setActiveTab(tab.key)}
-                      className={cn(
-                        'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-300',
-                        activeTab === tab.key
-                          ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-                      )}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                <AnimatePresence mode="wait">
-                  {activeTab === 'signin' ? (
-                    <motion.div
-                      key="signin"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <SignInForm onLogin={onLogin} />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="signup"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <SignUpForm onRegister={onLogin} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
-
-        {/* Demo Account Cards - only show on Sign In tab */}
-        <AnimatePresence>
-          {activeTab === 'signin' && (
-            <motion.div
-              className="mt-6 space-y-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <p className="text-xs text-center text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">Quick Demo Access</p>
-
-              {/* Admin card */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="rounded-xl transition-shadow duration-300 hover:shadow-[0_0_24px_rgba(16,185,129,0.25)]"
-              >
-                <div className="relative p-[1.5px] rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 bg-[length:200%_100%] animate-gradient-shift">
-                  <Card
-                    className="border-0 bg-white dark:bg-slate-800 cursor-pointer card-shine"
-                    onClick={() => {
-                      useAuthStore.getState().login('admin@voiceai.in', 'admin123')
-                        .then(() => {
-                          toast.success('Welcome to VoiceAI!');
-                          onLogin();
-                        })
-                        .catch(() => toast.error('Demo login failed. Please try again.'));
-                    }}
-                  >
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
-                        <Shield className="w-5 h-5 text-white" />
+          {/* Platform Stats */}
+          <motion.div
+            className="w-full max-w-sm"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <div className="rounded-xl bg-white/60 dark:bg-slate-800/40 backdrop-blur-lg border border-emerald-100/60 dark:border-emerald-900/30 p-5">
+              <div className="flex items-center justify-around">
+                {PLATFORM_STATS.map((stat, index) => {
+                  const StatIcon = stat.icon;
+                  return (
+                    <div key={stat.label} className="flex items-center gap-1.5 flex-1 justify-center">
+                      <StatIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          <AnimatedStat value={stat.value} suffix={stat.suffix} />
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-slate-900 dark:text-white">Super Admin</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">admin@voiceai.in</p>
-                      </div>
-                      <Sparkles className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    </CardContent>
-                  </Card>
-                </div>
-              </motion.div>
-
-              {/* Clinic card */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="rounded-xl transition-shadow duration-300 hover:shadow-[0_0_24px_rgba(16,185,129,0.25)]"
-              >
-                <div className="relative p-[1.5px] rounded-xl bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-400 bg-[length:200%_100%] animate-gradient-shift">
-                  <Card
-                    className="border-0 bg-white dark:bg-slate-800 cursor-pointer card-shine"
-                    onClick={() => {
-                      useAuthStore.getState().login('receptionist@sharma-dental.in', 'clinic123')
-                        .then(() => {
-                          toast.success('Welcome to VoiceAI!');
-                          onLogin();
-                        })
-                        .catch(() => toast.error('Demo login failed. Please try again.'));
-                    }}
-                  >
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-teal-500/20">
-                        <Phone className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-slate-900 dark:text-white">Demo Clinic</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Sharma Dental Clinic</p>
-                      </div>
-                      <Sparkles className="w-4 h-4 text-teal-500 flex-shrink-0" />
-                    </CardContent>
-                  </Card>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Platform Stats Bar */}
-        <motion.div
-          className="mt-6"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <div className="rounded-xl bg-white/60 dark:bg-slate-800/40 backdrop-blur-lg border border-emerald-100/60 dark:border-emerald-900/30 p-4">
-            <div className="flex items-center justify-around">
-              {PLATFORM_STATS.map((stat, index) => {
-                const StatIcon = stat.icon;
-                return (
-                  <div key={stat.label} className="flex items-center gap-1.5 flex-1 justify-center">
-                    {index > 0 && (
-                      <div className="absolute h-6 w-px bg-emerald-200/60 dark:bg-emerald-700/30" />
-                    )}
-                    <StatIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
-                    <div className="flex items-baseline gap-0.5">
-                      <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                        <AnimatedStat value={stat.value} suffix={stat.suffix} />
-                      </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</span>
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Trusted By */}
+          <motion.div
+            className="mt-8"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 uppercase tracking-widest font-medium mb-4">Trusted by 500+ Clinics Across India</p>
+            <div className="flex items-center justify-center gap-4">
+              {[
+                { Icon: Stethoscope, name: 'Apollo' },
+                { Icon: HeartPulse, name: 'Fortis' },
+                { Icon: Activity, name: 'Max' },
+                { Icon: Heart, name: 'AIIMS' },
+                { Icon: Cross, name: 'Medanta' },
+              ].map((clinic, i) => {
+                const ClinicIcon = clinic.Icon;
+                return (
+                  <motion.div
+                    key={clinic.name}
+                    className="flex flex-col items-center gap-1.5"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 + i * 0.08 }}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/50 shadow-sm flex items-center justify-center">
+                      <ClinicIcon className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500">{clinic.name}</span>
+                  </motion.div>
                 );
               })}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Bottom section - Trusted by 500+ clinics across India badge */}
-        <motion.div
-          className="mt-6"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-        >
-          <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 uppercase tracking-widest font-medium mb-3">Trusted by 500+ Clinics Across India</p>
-          <div className="flex items-center justify-center gap-4">
-            {[
-              { Icon: Stethoscope, name: 'Apollo' },
-              { Icon: HeartPulse, name: 'Fortis' },
-              { Icon: Activity, name: 'Max' },
-              { Icon: Heart, name: 'AIIMS' },
-              { Icon: Cross, name: 'Medanta' },
-            ].map((clinic, i) => {
-              const ClinicIcon = clinic.Icon;
-              return (
-                <motion.div
-                  key={clinic.name}
-                  className="flex flex-col items-center gap-1.5"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + i * 0.08 }}
-                >
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/50 shadow-sm flex items-center justify-center">
-                    <ClinicIcon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                  </div>
-                  <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500">{clinic.name}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Clinic Testimonial */}
-        <motion.div
-          className="mt-5"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.55 }}
-        >
-          <div className="relative pl-4 border-l-2 border-emerald-400/70 dark:border-emerald-500/50">
-            <Quote className="w-4 h-4 text-emerald-400 dark:text-emerald-500 mb-1.5 -mt-0.5" />
-            <p className="text-sm italic text-slate-600 dark:text-slate-300 leading-relaxed">
-              &ldquo;VoiceAI helped us reduce missed calls by 85%. Now every patient gets an instant response.&rdquo;
-            </p>
-            <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-1.5">
-              — Dr. Rajesh Sharma
-            </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              Sharma Dental Clinic
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Powered by Gemini AI badge */}
-        <motion.div
-          className="flex justify-center mt-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Badge
-            variant="outline"
-            className="gap-1.5 px-3 py-1.5 text-xs font-medium border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 backdrop-blur"
+          {/* Testimonial */}
+          <motion.div
+            className="mt-8 max-w-sm"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
           >
-            <motion.div
-              className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500"
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            Powered by Gemini AI
-          </Badge>
-        </motion.div>
+            <div className="relative pl-4 border-l-2 border-emerald-400/70 dark:border-emerald-500/50">
+              <Quote className="w-4 h-4 text-emerald-400 dark:text-emerald-500 mb-1.5 -mt-0.5" />
+              <p className="text-sm italic text-slate-600 dark:text-slate-300 leading-relaxed">
+                &ldquo;VoiceAI helped us reduce missed calls by 85%. Now every patient gets an instant response.&rdquo;
+              </p>
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-1.5">
+                — Dr. Rajesh Sharma
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                Sharma Dental Clinic
+              </p>
+            </div>
+          </motion.div>
+        </div>
 
-        {/* Footer */}
-        <motion.p
-          className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-        >
-          &copy; 2025 VoiceAI. Built for Indian healthcare.
-        </motion.p>
+        {/* Right Panel - Form */}
+        <div className="flex-1 flex items-center justify-center p-4 py-8 lg:p-12 relative z-10">
+          {/* Back Arrow (mobile + desktop) */}
+          {onBack && (
+            <motion.button
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              onClick={onBack}
+              className="absolute top-6 left-6 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors z-20"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </motion.button>
+          )}
+
+          <div className="w-full max-w-md relative">
+            {/* Mobile Logo */}
+            <div className="lg:hidden text-center mb-6">
+              <motion.div
+                className="relative inline-block"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Bot className="w-8 h-8 text-white" />
+                  </motion.div>
+                </div>
+              </motion.div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-3">
+                Voice<span className="text-emerald-600 dark:text-emerald-400">AI</span>
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+                AI-powered receptionist for Indian healthcare
+              </p>
+            </div>
+
+            {/* Login/Signup Card with animated gradient border */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <div className="border-gradient">
+                <Card className="border-0 shadow-none bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl card-shine shadow-[inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_0_rgba(0,0,0,0.05),0_20px_40px_-12px_rgba(0,0,0,0.15)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(0,0,0,0.2),0_20px_40px_-12px_rgba(0,0,0,0.4)]">
+                  <CardContent className="p-6">
+                    {/* Tab Switcher */}
+                    <div className="flex items-center bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1 mb-5">
+                      {[
+                        { key: 'signin', label: 'Sign In' },
+                        { key: 'signup', label: 'Create Account' },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setActiveTab(tab.key)}
+                          className={cn(
+                            'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-300',
+                            activeTab === tab.key
+                              ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {activeTab === 'signin' ? (
+                        <motion.div
+                          key="signin"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <SignInForm onLogin={onLogin} />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="signup"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <SignUpForm onRegister={onLogin} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+
+            {/* Demo Account Cards - only show on Sign In tab (mobile only) */}
+            <AnimatePresence>
+              {activeTab === 'signin' && (
+                <motion.div
+                  className="mt-6 space-y-3 lg:hidden"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className="text-xs text-center text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">Quick Demo Access</p>
+
+                  {/* Admin card */}
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="rounded-xl transition-shadow duration-300 hover:shadow-[0_0_24px_rgba(16,185,129,0.25)]"
+                  >
+                    <div className="relative p-[1.5px] rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 bg-[length:200%_100%] animate-gradient-shift">
+                      <Card
+                        className="border-0 bg-white dark:bg-slate-800 cursor-pointer card-shine"
+                        onClick={() => {
+                          useAuthStore.getState().login('admin@voiceai.in', 'admin123')
+                            .then(() => {
+                              toast.success('Welcome to VoiceAI!');
+                              onLogin();
+                            })
+                            .catch(() => toast.error('Demo login failed. Please try again.'));
+                        }}
+                      >
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
+                            <Shield className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-slate-900 dark:text-white">Super Admin</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">admin@voiceai.in</p>
+                          </div>
+                          <Sparkles className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </motion.div>
+
+                  {/* Clinic card */}
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="rounded-xl transition-shadow duration-300 hover:shadow-[0_0_24px_rgba(16,185,129,0.25)]"
+                  >
+                    <div className="relative p-[1.5px] rounded-xl bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-400 bg-[length:200%_100%] animate-gradient-shift">
+                      <Card
+                        className="border-0 bg-white dark:bg-slate-800 cursor-pointer card-shine"
+                        onClick={() => {
+                          useAuthStore.getState().login('receptionist@sharma-dental.in', 'clinic123')
+                            .then(() => {
+                              toast.success('Welcome to VoiceAI!');
+                              onLogin();
+                            })
+                            .catch(() => toast.error('Demo login failed. Please try again.'));
+                        }}
+                      >
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-teal-500/20">
+                            <Phone className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-slate-900 dark:text-white">Demo Clinic</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Sharma Dental Clinic</p>
+                          </div>
+                          <Sparkles className="w-4 h-4 text-teal-500 flex-shrink-0" />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Footer */}
+            <motion.p
+              className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              &copy; 2025 VoiceAI. Built for Indian healthcare.
+            </motion.p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-

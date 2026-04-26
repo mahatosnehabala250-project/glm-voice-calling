@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, Bell, Moon, Sun, Phone, X, Search,
-  User, HelpCircle, Command, ChevronDown, LogOut, AlertTriangle, Wifi, WifiOff
+  User, HelpCircle, Command, ChevronDown, LogOut, AlertTriangle, Wifi, WifiOff,
+  Settings
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/stores/auth-store';
@@ -16,6 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import NotificationsWidget from '@/components/shared/notifications-widget';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -65,8 +67,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const healthCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Click-outside handler for profile dropdown
-  // Uses 'click' (not 'mousedown') so that button onClick handlers fire first
-  // during the bubbling phase, preventing race conditions with dropdown close.
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
@@ -91,7 +91,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
         const geminiUp = geminiRes && geminiRes.ok;
         const vobizUp = vobizRes && vobizRes.ok;
 
-        // Check sessionStorage for dismissals
         const dismissedGeminiSession = sessionStorage.getItem('dismissed-gemini-offline');
         const dismissedVobizSession = sessionStorage.getItem('dismissed-vobiz-offline');
 
@@ -99,7 +98,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
           setGeminiOffline(true);
           if (!dismissedGeminiSession) setDismissedGemini(false);
         } else {
-          // Service came back - reset dismissal after 5 minutes
           if (dismissedGeminiSession) {
             const dismissedAt = parseInt(dismissedGeminiSession, 10);
             if (Date.now() - dismissedAt > 5 * 60 * 1000) {
@@ -124,7 +122,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           setVobizOffline(false);
         }
       } catch {
-        // Health check itself failed, assume services may be offline
+        // Health check itself failed
       }
       setBannerVisible(true);
     };
@@ -138,7 +136,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const dismissGeminiBanner = () => {
     setDismissedGemini(true);
     sessionStorage.setItem('dismissed-gemini-offline', Date.now().toString());
-    // Auto-hide after 5 minutes
     healthCheckTimerRef.current = setTimeout(() => {
       setDismissedGemini(false);
       sessionStorage.removeItem('dismissed-gemini-offline');
@@ -225,7 +222,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
     clinics: 'Clinic Management',
     provisioning: 'SIP Provisioning',
     billing: 'Billing',
-    analytics: role === 'admin' ? 'Analytics' : 'Analytics',
+    analytics: 'Analytics',
     'ai-performance': 'AI Insights',
     'live-calls': 'Live Calls',
     'agent-setup': 'Agent Setup',
@@ -279,16 +276,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
     hidden: { opacity: 0, y: 8, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
     exit: { opacity: 0, y: 8, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } },
-  };
-
-  const notifIcon = (type: string) => {
-    switch (type) {
-      case 'booking': return '📅';
-      case 'escalation': return '🚨';
-      case 'missed_call': return '📞';
-      case 'system': return '⚙️';
-      default: return '🔔';
-    }
   };
 
   const adminNotifIcon = (type: string) => {
@@ -410,7 +397,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           )}
         </AnimatePresence>
 
-        {/* Notifications (admin only) */}
+        {/* Notification Widget (admin) */}
         {role === 'admin' && (
           <div className="relative">
             <Button
@@ -521,80 +508,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
 
-        {/* Notifications (client only) */}
+        {/* Notifications Widget (client) */}
         {role === 'client' && (
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 relative"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-badge-pulse">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </Button>
-
-            <AnimatePresence>
-              {showNotifications && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden"
-                >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Notifications</h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllRead}
-                        className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium"
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-                  <ScrollArea className="max-h-80">
-                    {notifications.length === 0 ? (
-                      <div className="px-4 py-8 text-center text-sm text-slate-400">No notifications</div>
-                    ) : (
-                      <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {notifications.slice(0, 10).map((n) => (
-                          <div
-                            key={n.id}
-                            className={cn(
-                              'px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer',
-                              !n.isRead && 'bg-emerald-50/50 dark:bg-emerald-900/10'
-                            )}
-                          >
-                            <div className="flex items-start gap-2">
-                              <span className="text-sm mt-0.5">{notifIcon(n.type)}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{n.title}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{n.message}</p>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                                  {format(new Date(n.createdAt), 'dd MMM yyyy, h:mm a')}
-                                </p>
-                              </div>
-                              {!n.isRead && (
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <NotificationsWidget
+            onViewAll={() => {
+              useAppStore.getState().setClientPage('calls');
+            }}
+          />
         )}
 
-        {/* User Profile Dropdown */}
+        {/* User Avatar Dropdown */}
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -664,7 +587,22 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors duration-200"
                   >
                     <User className="w-4 h-4" />
-                    <span>Profile Settings</span>
+                    <span>Profile</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      if (role === 'admin') {
+                        useAppStore.getState().setAdminPage('overview');
+                      } else {
+                        useAppStore.getState().setClientPage('settings');
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors duration-200"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
                   </button>
 
                   <button
@@ -687,26 +625,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors duration-200"
                   >
                     <HelpCircle className="w-4 h-4" />
-                    <span>Help & Support</span>
+                    <span>Help</span>
                     <kbd className="ml-auto inline-flex items-center rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
                       Ctrl+H
                     </kbd>
-                  </button>
-
-                  <button
-                    onClick={() => { setProfileOpen(false); useAppStore.getState().setCommandPaletteOpen(true); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors duration-200"
-                  >
-                    <Command className="w-4 h-4" />
-                    <span className="flex-1 text-left">Keyboard Shortcuts</span>
-                    <div className="flex items-center gap-1">
-                      <kbd className="inline-flex items-center rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        Ctrl+K
-                      </kbd>
-                      <kbd className="inline-flex items-center rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        Ctrl+N
-                      </kbd>
-                    </div>
                   </button>
                 </div>
 

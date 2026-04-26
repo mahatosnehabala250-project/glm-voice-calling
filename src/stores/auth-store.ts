@@ -56,6 +56,25 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'voiceai-auth',
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      // Validate persisted state on hydration:
+      // If isAuthenticated is true but user is null/missing, the session is stale — reset it.
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (state.isAuthenticated && !state.user) {
+            state.user = null;
+            state.isAuthenticated = false;
+            state.error = null;
+          }
+          // Also validate that the user object has required fields
+          if (state.isAuthenticated && state.user) {
+            if (!state.user.id || !state.user.email || !state.user.name || !state.user.role) {
+              state.user = null;
+              state.isAuthenticated = false;
+              state.error = null;
+            }
+          }
+        }
+      },
     }
   )
 );
