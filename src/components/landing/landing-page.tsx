@@ -8,7 +8,7 @@ import {
   PhoneCall, Building2, Clock, ShieldCheck, ArrowRight, CheckCircle2,
   Star, Stethoscope, HeartPulse, Activity, Pill, Syringe, Heart,
   Play, ChevronDown, Menu, X, Sparkles, Zap, Globe, IndianRupee,
-  Users, HeadphonesIcon, MessageCircle, Mail, MapPin
+  Users, HeadphonesIcon, MessageCircle, Mail, MapPin, ArrowUp, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -106,6 +106,34 @@ const NAV_LINKS = [
   { label: 'How It Works', href: '#how-it-works' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Testimonials', href: '#testimonials' },
+  { label: 'FAQ', href: '#faq' },
+];
+
+const FAQS = [
+  {
+    q: 'VoiceAI kaise kaam karta hai?',
+    a: 'VoiceAI aapke clinic ke phone number se connect hota hai. Jab patient call karta hai, hamara AI receptionist call uthata hai, appointment book karta hai, aur WhatsApp pe confirmation bhejta hai. Poora process automated hai — aapko kuch karna nahi padta!',
+  },
+  {
+    q: 'Kya mujhe koi technical setup karna padega?',
+    a: 'Bilkul nahi! Hamari team setup kar degi. Aapko sirf apna clinic ka phone number dena hai aur basic details fill karni hai. Poora process 30 minutes mein hota hai.',
+  },
+  {
+    q: 'Kya VoiceAI Hindi/Hinglish mein baat kar sakta hai?',
+    a: 'Haan! VoiceAI Hindi, English aur Hinglish teeno mein naturally baat kar sakta hai. Patient jo bhi language use kare, AI samajh jayega aur respond karega.',
+  },
+  {
+    q: 'Agar AI koi complex query handle na kare toh?',
+    a: 'VoiceAI mein automatic escalation hai. Agar patient emergency mein ho ya complex sawal pooche, toh AI turant aapke staff ko call transfer kar deta hai. Koi call miss nahi hogi!',
+  },
+  {
+    q: 'Pricing plans mein kya kya included hai?',
+    a: 'Saare plans mein AI phone answering, appointment booking, WhatsApp confirmation aur analytics dashboard included hai. Higher plans mein zyada calls, campaigns aur priority support milta hai.',
+  },
+  {
+    q: 'Kya main free trial le sakta hoon?',
+    a: 'Haan! 14 din ka free trial hai. Credit card ki zarurat nahi. Trial ke baad aap chaho toh plan upgrade kar sakte hain ya cancel bhi kar sakte hain.',
+  },
 ];
 
 const STATS = [
@@ -272,9 +300,13 @@ const TESTIMONIALS = [
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      setShowBackToTop(window.scrollY > 400);
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -659,6 +691,70 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
         </div>
       </Section>
+
+      {/* ─── FAQ Section ──────────────────────────────────────────────────── */
+      <Section id="faq" className="relative z-10 py-20 sm:py-28 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-14">
+            <Badge variant="outline" className="mb-4 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/80 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300">
+              <HelpCircle className="w-3.5 h-3.5 mr-1.5" />
+              FAQ
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              Aapke mann mein jo bhi sawal hai, hum yahan jawab de rahe hain.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => (
+              <motion.div
+                key={faq.q}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+              >
+                <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
+                  <CardContent className="p-0">
+                    <details className="group">
+                      <summary className="flex items-center justify-between cursor-pointer p-5 text-left list-none select-none [&::-webkit-details-marker]:hidden">
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white pr-4">
+                          {faq.q}
+                        </h3>
+                        <ChevronDown className="w-5 h-5 text-emerald-500 shrink-0 transition-transform duration-300 group-open:rotate-180" />
+                      </summary>
+                      <div className="px-5 pb-5 -mt-1">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {faq.a}
+                        </p>
+                      </div>
+                    </details>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* ─── Back to Top Button ──────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center"
+            aria-label="Back to top"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* ─── CTA Section ────────────────────────────────────────────────────── */}
       <Section className="relative z-10 py-20 sm:py-28 px-4">
