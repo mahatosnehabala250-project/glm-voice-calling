@@ -1,16 +1,19 @@
 #!/bin/bash
-# Custom dev script - keeps Next.js server alive
-# This runs inside a subshell from start.sh, so we use exec to replace the shell
-# This prevents the subshell from exiting and killing the server
+# Production server startup - uses standalone build for maximum stability
+cd /home/z/my-project
 
 echo "[DEV] Installing dependencies..."
-cd /home/z/my-project
 bun install
 
 echo "[DEV] Setting up database..."
 bun run db:push
 
-echo "[DEV] Starting Next.js dev server (will stay alive)..."
-# Use exec to replace this shell with the bun process
-# This ensures the process never exits and stays under tini's management
-exec bun run dev
+echo "[DEV] Building production app..."
+NODE_ENV=production npx next build
+
+echo "[DEV] Setting up standalone files..."
+cp -r .next/static .next/standalone/.next/ 2>/dev/null
+cp -r public .next/standalone/ 2>/dev/null
+
+echo "[DEV] Starting production server on port 3000..."
+exec node /home/z/my-project/.next/standalone/server.js
