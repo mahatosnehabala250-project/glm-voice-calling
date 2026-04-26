@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
+import LandingPage from '@/components/landing/landing-page';
 import LoginPage from '@/components/auth/login-page';
 import Sidebar from '@/components/shared/sidebar';
 import Header from '@/components/shared/header';
@@ -157,6 +158,7 @@ export default function Home() {
   const { user, isAuthenticated } = useAuthStore();
   const { sidebarOpen, setSidebarOpen } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
 
   useEffect(() => {
     const timer = requestAnimationFrame(() => setHydrated(true));
@@ -173,8 +175,38 @@ export default function Home() {
     );
   }
 
+  // Show landing page
+  if (showLanding && !isAuthenticated) {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="landing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <LandingPage onGetStarted={() => setShowLanding(false)} />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // Show login page
   if (!isAuthenticated || !user) {
-    return <LoginPage onLogin={() => {}} />;
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="login"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <LoginPage onLogin={() => {}} />
+        </motion.div>
+      </AnimatePresence>
+    );
   }
 
   const isAdmin = user.role === 'admin';
