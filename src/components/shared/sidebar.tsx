@@ -87,7 +87,7 @@ const adminSections: NavSection[] = [
     ],
   },
   {
-    title: 'SYSTEM',
+    title: 'ACCOUNT',
     items: [
       { id: 'billing', label: 'Billing', icon: CreditCard },
       { id: 'notifications', label: 'Notifications', icon: Bell, badge: NOTIFICATION_BADGES['notifications'] },
