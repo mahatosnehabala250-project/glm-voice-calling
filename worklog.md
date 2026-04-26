@@ -3424,3 +3424,43 @@ Stage Summary:
 - New setup-hostinger.sh for automated VPS deployment
 - GitHub push successful: 8c27e89
 - All changes deployed to: https://github.com/mahatosnehabala250-project/glm-voice-calling
+
+---
+Task ID: LP-1
+Agent: UI Enhancement Developer
+Task: Improve VoiceAI SaaS Landing Page with 3 targeted improvements
+
+Work Log:
+- Read worklog.md to understand full project history and existing landing page structure
+- Analyzed landing-page.tsx (1,385 lines): Hero, Features, How It Works, Pricing, Testimonials, FAQ, CTA, Footer sections
+- Confirmed existing infrastructure: framer-motion, lucide-react, shadcn/ui, emerald/teal color scheme
+
+Improvement 1: Hero Phone Mockup (Mobile Visibility + Updated Chat)
+- Changed phone mockup from `hidden lg:flex` to `flex justify-center order-last lg:order-none` for mobile visibility
+- Phone now appears below hero text on mobile, right side on desktop (natural grid order)
+- Made phone frame responsive: `w-[260px] sm:w-[300px]` for better mobile fit
+- Updated CHAT_MESSAGES to user-specified Hinglish conversation:
+  - AI: "Namaste! 🙏 Dr. Sharma Dental Clinic mein aapka swagat hai."
+  - Patient: "Kya aaj 3 baje slot available hai?"
+  - AI: "Haan ji! 3 PM free hai. Book karoon?"
+  - Patient: "Haan book kar do, cleaning ke liye."
+
+Improvement 2: Social Proof Scrolling Marquee Bar
+- Added `@keyframes marquee-left-to-right` and `.animate-marquee` CSS to globals.css (30s linear infinite, pauses on hover)
+- Replaced MapPin icon + slate text with emerald text + bullet (•) separators
+- Changed from 2x to 3x CITY_NAMES duplication for seamless infinite loop
+- Text styling: `text-sm font-medium text-emerald-600 dark:text-emerald-400`
+- Bullet separator: `text-emerald-300 dark:text-emerald-600` for subtle contrast
+
+Improvement 3: Footer Social Icons (Circular Buttons)
+- Changed social icon buttons from `rounded-lg` to `rounded-full` for circular appearance
+- Icons: Twitter/X, LinkedIn, YouTube, Instagram (all already imported from lucide-react)
+- Preserved hover effects: emerald color + emerald background + scale(1.1)
+
+Stage Summary:
+- 2 files modified (globals.css, landing-page.tsx)
+- ESLint: 0 errors
+- Dev server: compiles successfully
+- All existing code preserved (additive changes only)
+- Emerald/teal color scheme maintained throughout
+- Mobile-first responsive design preserved

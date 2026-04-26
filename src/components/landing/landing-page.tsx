@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Bot, Phone, CalendarCheck, MessageSquare, Monitor, Megaphone,
@@ -8,11 +8,13 @@ import {
   PhoneCall, Building2, Clock, ShieldCheck, ArrowRight, CheckCircle2,
   Star, Stethoscope, HeartPulse, Activity, Pill, Syringe, Heart,
   Play, ChevronDown, Menu, X, Sparkles, Zap, Globe, IndianRupee,
-  Users, HeadphonesIcon, MessageCircle, Mail, MapPin, ArrowUp, HelpCircle
+  Users, HeadphonesIcon, MessageCircle, Mail, MapPin, ArrowUp, HelpCircle,
+  Twitter, Linkedin, Youtube, Instagram, Send, User, Mic, PhoneIncoming, Volume2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -260,6 +262,22 @@ const PLANS = [
   },
 ];
 
+const CHAT_MESSAGES = [
+  { sender: 'ai', text: 'Namaste! 🙏 Dr. Sharma Dental Clinic mein aapka swagat hai.', time: '10:30 AM' },
+  { sender: 'patient', text: 'Kya aaj 3 baje slot available hai?', time: '10:30 AM' },
+  { sender: 'ai', text: 'Haan ji! 3 PM free hai. Book karoon?', time: '10:31 AM' },
+  { sender: 'patient', text: 'Haan book kar do, cleaning ke liye.', time: '10:31 AM' },
+];
+
+const CITY_NAMES = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Pune', 'Kolkata', 'Jaipur', 'Ahmedabad', 'Lucknow', 'Chandigarh', 'Indore'];
+
+const SOCIAL_ICONS = [
+  { icon: Twitter, label: 'Twitter/X' },
+  { icon: Linkedin, label: 'LinkedIn' },
+  { icon: Youtube, label: 'YouTube' },
+  { icon: Instagram, label: 'Instagram' },
+];
+
 const TESTIMONIALS = [
   {
     name: 'Dr. Priya Sharma',
@@ -301,6 +319,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -310,6 +330,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSubscribe = useCallback(() => {
+    if (email.trim() && email.includes('@')) {
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 4000);
+    }
+  }, [email]);
 
   const scrollToSection = (href: string) => {
     setMobileMenuOpen(false);
@@ -483,97 +511,202 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         {/* Dot pattern */}
         <div className="absolute inset-0 bg-dot-pattern opacity-30 pointer-events-none" />
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-6"
-          >
-            <Badge
-              variant="outline"
-              className="px-4 py-1.5 text-sm font-medium border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/80 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 backdrop-blur-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-              Trusted by 500+ Clinics Across India
-            </Badge>
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-6"
-          >
-            AI Receptionist for
-            <br />
-            <span className="text-gradient-emerald">Your Clinic</span>
-          </motion.h1>
-
-          {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 leading-relaxed"
-          >
-            Apke clinic ke har phone call ko AI handle kare — 24/7 appointment booking,
-            Hinglish mein baat-cheet, aur WhatsApp confirmations.
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium"> Abhi free trial shuru karein!</span>
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
-          >
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Button
-                size="lg"
-                onClick={onGetStarted}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 px-8 h-13 text-base font-semibold transition-all duration-300"
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            {/* Hero Text - Left Column */}
+            <div className="text-center lg:text-left">
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mb-6"
               >
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-200 dark:hover:border-emerald-800 px-8 h-13 text-base font-medium transition-all duration-300"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Watch Demo
-              </Button>
-            </motion.div>
-          </motion.div>
+                <Badge
+                  variant="outline"
+                  className="px-4 py-1.5 text-sm font-medium border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/80 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 backdrop-blur-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Trusted by 500+ Clinics Across India
+                </Badge>
+              </motion.div>
 
-          {/* Trust badges */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-wrap items-center justify-center gap-6 sm:gap-10"
-          >
-            {STATS.map(({ icon: Icon, value, suffix, label }) => (
-              <div key={label} className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-left">
-                  <div className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                    <AnimatedCounter value={value} suffix={suffix} />
+              {/* Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-6"
+              >
+                AI Receptionist for
+                <br />
+                <span className="text-gradient-emerald">Your Clinic</span>
+              </motion.h1>
+
+              {/* Subheadline */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto lg:mx-0 mb-8 leading-relaxed"
+              >
+                Apke clinic ke har phone call ko AI handle kare — 24/7 appointment booking,
+                Hinglish mein baat-cheet, aur WhatsApp confirmations.
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium"> Abhi free trial shuru karein!</span>
+              </motion.p>
+
+              {/* CTA Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-12"
+              >
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    size="lg"
+                    onClick={onGetStarted}
+                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 px-8 h-13 text-base font-semibold transition-all duration-300"
+                  >
+                    Start Free Trial
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-200 dark:hover:border-emerald-800 px-8 h-13 text-base font-medium transition-all duration-300"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Watch Demo
+                  </Button>
+                </motion.div>
+              </motion.div>
+
+              {/* Trust badges */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-6 sm:gap-10"
+              >
+                {STATS.map(({ icon: Icon, value, suffix, label }) => (
+                  <div key={label} className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                        <AnimatedCounter value={value} suffix={suffix} />
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
-                </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Phone Mockup - Right Column */}
+            <motion.div
+              initial={{ opacity: 0, x: 40, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+              className="flex justify-center order-last lg:order-none"
+            >
+              <div className="relative">
+                {/* Glow behind phone */}
+                <div className="absolute -inset-8 bg-gradient-to-br from-emerald-400/20 via-teal-400/10 to-cyan-400/20 rounded-[3rem] blur-2xl" />
+                {/* Phone frame */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="relative w-[260px] sm:w-[300px] bg-slate-900 rounded-[2.5rem] p-3 shadow-2xl shadow-emerald-900/20"
+                >
+                  {/* Phone notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20" />
+                  {/* Phone screen */}
+                  <div className="relative bg-gradient-to-b from-emerald-600 to-teal-700 rounded-[2rem] overflow-hidden">
+                    {/* Status bar */}
+                    <div className="flex items-center justify-between px-6 pt-8 pb-2 text-white/80 text-xs">
+                      <span>10:30</span>
+                      <div className="flex items-center gap-1.5">
+                        <PhoneIncoming className="w-3 h-3" />
+                        <span className="font-medium text-white">Live Call</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Volume2 className="w-3 h-3" />
+                        <Mic className="w-3 h-3" />
+                      </div>
+                    </div>
+                    {/* Clinic name */}
+                    <div className="px-4 pb-3 text-center">
+                      <p className="text-white/60 text-[10px]">Sharma Dental Clinic</p>
+                      <p className="text-white text-sm font-semibold">VoiceAI Receptionist</p>
+                    </div>
+                    {/* Chat area */}
+                    <div className="bg-slate-950/80 rounded-t-2xl px-3 pt-3 pb-4 space-y-2.5 min-h-[320px]">
+                      {CHAT_MESSAGES.map((msg, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.6 + i * 0.3, duration: 0.4 }}
+                          className={cn(
+                            'flex gap-2',
+                            msg.sender === 'ai' ? 'flex-row' : 'flex-row-reverse'
+                          )}
+                        >
+                          <div className={cn(
+                            'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
+                            msg.sender === 'ai'
+                              ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
+                              : 'bg-slate-700'
+                          )}>
+                            {msg.sender === 'ai'
+                              ? <Bot className="w-3 h-3 text-white" />
+                              : <User className="w-3 h-3 text-slate-300" />
+                            }
+                          </div>
+                          <div className={cn(
+                            'max-w-[200px] rounded-2xl px-3 py-2 text-[11px] leading-relaxed',
+                            msg.sender === 'ai'
+                              ? 'bg-slate-800 text-slate-200 rounded-tl-sm'
+                              : 'bg-emerald-600 text-white rounded-tr-sm'
+                          )}>
+                            {msg.text}
+                            <p className={cn(
+                              'text-[9px] mt-1',
+                              msg.sender === 'ai' ? 'text-slate-500' : 'text-emerald-300'
+                            )}>{msg.time}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                      {/* Typing indicator */}
+                      <div className="flex items-center gap-2 pl-1">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                          <Bot className="w-3 h-3 text-white" />
+                        </div>
+                        <div className="bg-slate-800 rounded-2xl rounded-tl-sm px-3 py-2">
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map((dot) => (
+                              <motion.div
+                                key={dot}
+                                className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+                                animate={{ opacity: [0.3, 1, 0.3] }}
+                                transition={{ duration: 1, repeat: Infinity, delay: dot * 0.2 }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            ))}
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
 
         {/* Scroll indicator */}
@@ -585,6 +718,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <ChevronDown className="w-6 h-6 text-slate-400 dark:text-slate-500" />
         </motion.div>
       </section>
+
+      {/* ─── Social Proof Scrolling Bar ─────────────────────────────────── */}
+      <div className="relative z-10 border-y border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm py-4 overflow-hidden">
+        <div className="flex animate-marquee whitespace-nowrap">
+          {[...CITY_NAMES, ...CITY_NAMES, ...CITY_NAMES].map((city, i) => (
+            <span key={i} className="mx-6 text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              {city}
+              <span className="text-emerald-300 dark:text-emerald-600">•</span>
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* ─── Features Section ───────────────────────────────────────────────── */}
       <Section id="features" className="relative z-10 py-20 sm:py-28 px-4">
@@ -630,8 +775,22 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </p>
           </div>
 
-          {/* Steps */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Steps with connecting lines */}
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4">
+            {/* Connecting dotted lines (desktop only) */}
+            <div className="hidden lg:block absolute top-1/2 -translate-y-1/2 left-[calc(12.5%+1rem)] right-[calc(12.5%+1rem)] h-0 z-0 pointer-events-none">
+              <svg width="100%" height="4" className="overflow-visible">
+                <line x1="0" y1="2" x2="100%" y2="2" stroke="currentColor" strokeWidth="2" strokeDasharray="8 6" className="text-emerald-300 dark:text-emerald-700" />
+              </svg>
+            </div>
+            {/* Arrow indicators between steps (desktop only) */}
+            {[0, 1, 2].map((i) => (
+              <div key={`arrow-${i}`} className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-10 pointer-events-none" style={{ left: `${(i + 1) * 25}%`, transform: 'translate(-50%, -50%)' }}>
+                <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 border-2 border-emerald-300 dark:border-emerald-700 flex items-center justify-center shadow-sm">
+                  <ArrowRight className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                </div>
+              </div>
+            ))}
             {STEPS.map((step, i) => (
               <StepCard key={step.title} step={step} index={i} />
             ))}
@@ -692,7 +851,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </Section>
 
-      {/* ─── FAQ Section ──────────────────────────────────────────────────── */
+      {/* ─── FAQ Section ──────────────────────────────────────────────────── */}
       <Section id="faq" className="relative z-10 py-20 sm:py-28 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
@@ -710,31 +869,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="space-y-3">
             {FAQS.map((faq, i) => (
-              <motion.div
-                key={faq.q}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-              >
-                <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
-                  <CardContent className="p-0">
-                    <details className="group">
-                      <summary className="flex items-center justify-between cursor-pointer p-5 text-left list-none select-none [&::-webkit-details-marker]:hidden">
-                        <h3 className="text-base font-semibold text-slate-900 dark:text-white pr-4">
-                          {faq.q}
-                        </h3>
-                        <ChevronDown className="w-5 h-5 text-emerald-500 shrink-0 transition-transform duration-300 group-open:rotate-180" />
-                      </summary>
-                      <div className="px-5 pb-5 -mt-1">
-                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                          {faq.a}
-                        </p>
-                      </div>
-                    </details>
-                  </CardContent>
-                </Card>
-              </motion.div>
+              <FaqItem key={faq.q} faq={faq} index={i} />
             ))}
           </div>
         </div>
@@ -772,6 +907,28 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 animate={{ scale: [1.2, 0.9, 1.2] }}
                 transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
               />
+              {/* Particle dots animation */}
+              {Array.from({ length: 20 }).map((_, i) => (
+                <motion.div
+                  key={`particle-${i}`}
+                  className="absolute w-1 h-1 rounded-full bg-white/30"
+                  style={{
+                    left: `${10 + Math.random() * 80}%`,
+                    top: `${10 + Math.random() * 80}%`,
+                  }}
+                  animate={{
+                    y: [0, -20 - Math.random() * 30, 0],
+                    opacity: [0, 0.6, 0],
+                    scale: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 3 + Math.random() * 4,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: Math.random() * 3,
+                  }}
+                />
+              ))}
             </div>
 
             <div className="relative z-10">
@@ -829,6 +986,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                 AI-powered receptionist built specifically for Indian healthcare clinics.
               </p>
+              {/* Social media icons */}
+              <div className="flex items-center gap-3 mb-4">
+                {SOCIAL_ICONS.map(({ icon: SocIcon, label }) => (
+                  <button
+                    key={label}
+                    aria-label={label}
+                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 hover:scale-110"
+                  >
+                    <SocIcon className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
               <p className="text-sm text-slate-400 dark:text-slate-500">
                 Made with ❤️ in India
               </p>
@@ -887,12 +1056,50 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
           </div>
 
+          {/* Newsletter Signup */}
+          <div className="mt-8 p-5 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30">
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Stay Updated</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Get product updates and healthcare AI tips delivered to your inbox.</p>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubscribe()}
+                className="h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-emerald-400 dark:focus:border-emerald-600"
+              />
+              <Button
+                onClick={handleSubscribe}
+                size="sm"
+                className="h-9 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm flex-shrink-0"
+              >
+                {subscribed ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+            {subscribed && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">Thanks for subscribing! 🎉</p>
+            )}
+          </div>
+
           {/* Bottom bar */}
           <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               © {new Date().getFullYear()} VoiceAI. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
+              {/* Social icons in bottom bar */}
+              <div className="flex items-center gap-2">
+                {SOCIAL_ICONS.map(({ icon: SocIcon, label }) => (
+                  <button
+                    key={`bottom-${label}`}
+                    aria-label={label}
+                    className="text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    <SocIcon className="w-3.5 h-3.5" />
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot" />
                 <span className="text-xs text-slate-400 dark:text-slate-500">All systems operational</span>
@@ -918,9 +1125,21 @@ function FeatureCard({ feature, index }: { feature: typeof FEATURES[0]; index: n
       initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="relative"
     >
-      <Card className="card-interactive group border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm h-full">
-        <CardContent className="p-6">
+      {/* Hover gradient glow */}
+      <div className="absolute -inset-1 bg-gradient-to-br from-emerald-400/0 via-teal-400/0 to-cyan-400/0 group-hover:from-emerald-400/15 group-hover:via-teal-400/10 group-hover:to-cyan-400/15 rounded-2xl blur-xl transition-all duration-500 opacity-0 group-hover:opacity-100" />
+      <Card className="card-interactive group relative border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm h-full">
+        <CardContent className="p-6 relative">
+          {/* Icon badge in top-right corner */}
+          <div className="absolute top-4 right-4">
+            <div className={cn(
+              'w-7 h-7 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm opacity-60 group-hover:opacity-100 transition-opacity duration-300',
+              feature.gradient
+            )}>
+              <Icon className="w-3.5 h-3.5 text-white" />
+            </div>
+          </div>
           <div className={cn(
             'w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110',
             feature.gradient
@@ -963,11 +1182,6 @@ function StepCard({ step, index }: { step: typeof STEPS[0]; index: number }) {
             )}>
               {step.step}
             </div>
-            {index < STEPS.length - 1 && (
-              <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-10 text-emerald-300 dark:text-emerald-700">
-                <ArrowRight className="w-5 h-5" />
-              </div>
-            )}
           </div>
 
           <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
@@ -1112,6 +1326,57 @@ function TestimonialCard({ testimonial, index }: { testimonial: typeof TESTIMONI
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ─── FAQ Item (collapsible) ─────────────────────────────────────────────────
+
+function FaqItem({ faq, index }: { faq: typeof FAQS[0]; index: number }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: index * 0.08 }}
+    >
+      <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
+        <CardContent className="p-0">
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex items-center justify-between cursor-pointer p-5 text-left w-full"
+          >
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white pr-4">
+              {faq.q}
+            </h3>
+            <motion.div
+              animate={{ rotate: open ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronDown className="w-5 h-5 text-emerald-500 shrink-0" />
+            </motion.div>
+          </button>
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="px-5 pb-5 -mt-1">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {faq.a}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </motion.div>

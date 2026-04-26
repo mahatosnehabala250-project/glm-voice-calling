@@ -4,6 +4,68 @@
 
 ---
 
+## What's New (Recent Updates)
+
+> Last updated: June 2025 — Check ye changes before deploy karo!
+
+| Change | Description | Impact |
+|--------|-------------|--------|
+| **curl Fix** | All 6 Dockerfiles mein `curl` install kiya gaya hai | Health checks ab properly kaam karenge production mein |
+| **.dockerignore** | New file added — excludes node_modules, .env, docs, mini-services, etc. | Build context ~90% chhota hua, builds bahut faster hain |
+| **setup-hostinger.sh** | ONE-LINER deployment script added | Fresh VPS pe ek command mein sab deploy ho jaata hai |
+| **APP_DOMAIN** | `docker-compose.yml` aur `.env.example` mein new variable | Caddy SSL configuration ab domain se auto-configure hoti hai |
+
+### Important Fixes Applied
+
+**curl for Health Checks (CRITICAL)**
+
+> Pehle Docker images mein `curl` installed nahi tha. Matlab Docker health check commands fail ho jaati thi
+> kyunki container ke andar `curl` binary hi nahi milti thi. Ab ye **fix** ho gaya hai.
+
+Ye fix lagu hai in sabhi Dockerfiles mein:
+
+1. `Dockerfile` — Main Next.js app (port 3000)
+2. `mini-services/vobiz-sip-service/Dockerfile` — SIP service (port 3031)
+3. `mini-services/gemini-ai-service/Dockerfile` — Gemini AI (port 3032)
+4. `mini-services/ws-bridge/Dockerfile` — WebSocket bridge (port 3033)
+5. `mini-services/call-simulator/Dockerfile` — Call simulator (port 3004)
+6. `mini-services/call-orchestrator/Dockerfile` — Call orchestrator (port 3035)
+
+> **Agar purana code use kar rahe ho** toh `git pull` karke latest code lo.
+> Purane builds mein health check fail hoga aur containers "unhealthy" status mein rahenge.
+
+### Build Optimization (.dockerignore)
+
+> Ab `.dockerignore` file hai jo Docker build context se unnecessary files exclude karti hai:
+> `node_modules`, `.env`, `qa-screenshots/`, `downloads/`, `uploads/`, `mini-services/`, docs, dev scripts — sab excluded.
+> **Result**: Build context ~90% chhota, build time significantly faster, image size bhi kam. 🚀
+
+### Quick-Setup Alternative (setup-hostinger.sh)
+
+> Coolify ke alawa, agar directly Docker Compose se deploy karna hai (without Coolify),
+> toh `setup-hostinger.sh` script use karo — **ek command mein sab ho jaata hai!**
+
+```bash
+# Fresh VPS pe ek command run karo — bas!
+curl -sSL https://raw.githubusercontent.com/mahatosnehabala250-project/glm-voice-calling/main/setup-hostinger.sh | bash -s -- voiceai.yourdomain.com
+```
+
+**Ye script kya karta hai (automatically):**
+1. System update + Docker install
+2. Firewall setup (ports 22, 80, 443)
+3. 4GB swap create (low-RAM VPS ke liye)
+4. Git clone + .env setup
+5. Caddyfile domain configuration
+6. Build & start all 8 services
+7. Prisma DB migrations
+8. Health checks on all services
+
+> **Time**: ~15-20 minutes on a fresh VPS. Chai peelo! ☕
+> **Note**: Ye script Coolify VPS pe bhi use ho sakta hai agar directly Docker Compose chalana ho.
+> Detail guide: `HOSTINGER-SETUP.md` file dekho.
+
+---
+
 ## PART 1: VPS Setup & Coolify Installation
 
 ### Step 1: VPS Requirements
@@ -184,8 +246,13 @@ VOBIZ_CREDENTIAL_ID=your-credential-id
 JWT_SECRET=change-this-to-a-strong-random-string-64chars
 
 # === APP CONFIG ===
+APP_DOMAIN=voiceai.yourdomain.com
 NEXT_PUBLIC_APP_URL=https://voiceai.yourdomain.com
 NEXT_PUBLIC_APP_NAME=VoiceAI
+
+# > APP_DOMAIN is IMPORTANT! Caddy isko use karta hai SSL ke liye.
+# > Apna actual domain yahan daalo (bina https ke)
+# > Example: APP_DOMAIN=voiceai.example.com
 
 # === n8n ===
 N8N_USERNAME=admin
@@ -323,11 +390,30 @@ sudo systemctl disable nginx
 
 ### Health Check Failing
 
-```bash
-# Test manually
-docker exec voiceai-app curl -f http://localhost:3000/api/route
+> **Most common reason**: Container mein `curl` installed nahi hai.
+> Ye issue **already fix** ho gaya hai latest code mein — sab Dockerfiles mein `curl` add kar diya gaya hai.
 
-# If curl not in container
+```bash
+# Step 1: Check if curl exists in container
+docker exec voiceai-app which curl
+# Expected: /usr/bin/curl
+# Agar empty output aaye toh curl nahi hai — latest code pull karo!
+
+# Step 2: Test health check manually
+docker exec voiceai-app curl -f http://localhost:3000/api/route
+# Expected: HTML response ya JSON
+
+# Step 3: Check health check status
+docker inspect --format='{{json .State.Health}}' voiceai-app | python3 -m json.tool
+
+# Step 4: Agar curl nahi hai (purana build hai) toh:
+# Latest code pull karo aur rebuild karo
+cd /data/coolify/services/your-project/
+git pull origin main
+docker compose build --no-cache
+docker compose up -d
+
+# Step 5: Alternative (agar curl nahi chahiye rebuild ke liye)
 docker exec voiceai-app wget -qO- http://localhost:3000/api/route
 ```
 

@@ -1924,3 +1924,21 @@
     transition: none;
   }
 }
+
+/* ─── Marquee Animation ──────────────────────────────────────── */
+@keyframes marquee-left-to-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee-left-to-right 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
